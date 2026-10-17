@@ -10,6 +10,10 @@ YO3MFS is an offline 3MF viewer for macOS, Windows, and Linux. It displays geome
 
 Choose File → Open or drop one `.3mf` into the window. A path can also be passed to the executable. Bambu Studio does not need to be installed.
 
+### macOS verification warning
+
+The current macOS package is not notarized. If you trust the build downloaded from this repository's Releases, copy the app to Applications and try opening it. When macOS cannot verify it, choose **Done**, then open **System Settings → Privacy & Security → Open Anyway** for YO3MFS. Confirm **Open** and authenticate if requested. This creates a local exception for this app. [Apple's instructions](https://support.apple.com/en-us/102445).
+
 ## Controls
 
 - Left drag: rotate. Scroll or `+` / `−`: zoom.

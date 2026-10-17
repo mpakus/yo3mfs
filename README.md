@@ -27,6 +27,19 @@ Version tags publish packages only after all four platforms pass their checks. D
 
 On macOS, open the DMG and copy `yo3mfs.app` to Applications. On Windows, extract the ZIP and run `yo3mfs.exe`. On Linux, extract the archive and run `./yo3mfs`. Packages are not signed for public distribution: macOS uses an ad-hoc signature without Developer ID/notarization; Windows Authenticode signing is not configured. Linux archives do not bundle system libraries.
 
+### macOS first launch
+
+Version 1.3.1 is not notarized, so macOS may block it with an alert that Apple could not verify the app is free of malware. If you downloaded the package from this repository's Releases and trust this build:
+
+1. Copy `yo3mfs.app` from the DMG into Applications and try opening that copy.
+2. Choose **Done** when the warning appears.
+3. Open **System Settings → Privacy & Security**, scroll to Security, and select **Open Anyway** for YO3MFS.
+4. Confirm **Open** and authenticate if requested. macOS remembers the exception for this app.
+
+See [Apple's instructions](https://support.apple.com/en-us/102445). This approves the current app locally; it does not notarize the release. Removing this verification warning for other users requires a future build signed with Developer ID and notarized by Apple.
+
+### Run from source
+
 To run from source, install Rust/rustup and your platform's build tools:
 
 ```bash

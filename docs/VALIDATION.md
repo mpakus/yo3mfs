@@ -186,3 +186,9 @@ The [v1.3.1 tag run](https://github.com/mpakus/yo3mfs/actions/runs/39000331367) 
 [YO3MFS v1.3.1](https://github.com/mpakus/yo3mfs/releases/tag/v1.3.1) was published as Latest on October 16, 2026 (America/Chicago). It is public, not a draft or prerelease, with exactly four native packages and `SHA256SUMS`. All four packages were downloaded from the Release and their hashes matched the combined checksum file. The five direct asset URLs in README returned HTTP 200 without authentication. The published README contains the release links and existing screenshot.
 
 The redundant branch run for the same release commit was canceled after the tag run started; the successful tag run is the release evidence. Documentation updates after publication do not move the release tag or change its binaries. Signing, manual Intel/Windows/Linux GUI acceptance, and licensing decisions remain outstanding as documented above.
+
+### macOS Gatekeeper report
+
+After publication, the owner reported macOS blocking YO3MFS because Apple could not verify it. The downloaded Apple Silicon 1.3.1 DMG was mounted read-only for inspection: `codesign --verify --deep --strict` passed, while signature details reported `Signature=adhoc` and no TeamIdentifier. `spctl --assess --type execute --verbose=4` rejected the app. A valid ad-hoc signature and passing build checks do not establish Gatekeeper approval.
+
+README, portable-package instructions, and release notes now describe Apple's app-specific Privacy & Security → Open Anyway flow. This is an installation workaround; the published binaries remain unchanged and unnotarized. The permanent distribution fix requires Developer ID signing and successful Apple notarization, followed by ticket stapling and Gatekeeper verification. The user's local security settings were not changed, and successful launch through the exception has not been independently observed.
