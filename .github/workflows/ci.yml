@@ -1,0 +1,54 @@
+name: Desktop checks and packages
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  desktop:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-15, macos-15-intel, windows-2025, ubuntu-24.04]
+    runs-on: ${{ matrix.os }}
+    env:
+      CARGO_TERM_COLOR: always
+    steps:
+      - uses: actions/checkout@v4
+      - name: Linux build libraries
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y build-essential pkg-config libxkbcommon-dev libwayland-dev libx11-dev libxi-dev libxrandr-dev libxcursor-dev libgl1-mesa-dev libegl1-mesa-dev
+      - name: Pinned Rust toolchain
+        run: rustup show
+      - name: Formatting
+        run: cargo fmt --all -- --check
+      - name: Clippy
+        run: cargo clippy --locked --all-targets --all-features -- -D warnings
+      - name: Tests
+        run: cargo test --locked --all-targets --all-features
+      - name: Release
+        run: cargo build --locked --release
+      - name: CLI smoke test
+        run: ./target/release/yo3mfs --version
+        if: runner.os != 'Windows'
+      - name: Windows CLI smoke test
+        run: ./target/release/yo3mfs.exe --version
+        if: runner.os == 'Windows'
+      - name: macOS DMG
+        if: runner.os == 'macOS'
+        run: python3 scripts/package.py --dmg
+      - name: Portable package
+        if: runner.os != 'macOS'
+        run: python scripts/package.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: yo3mfs-${{ matrix.os }}
+          path: |
+            dist/**/*.dmg
+            dist/**/*.zip
+            dist/**/*.tar.gz
+          if-no-files-found: error

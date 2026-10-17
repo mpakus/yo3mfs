@@ -1,0 +1,13 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=YO3MFS
+GenericName=3MF Viewer
+GenericName[ru]=Просмотрщик 3MF
+Comment=Open and explore 3MF models
+Comment[ru]=Открывайте и рассматривайте модели 3MF
+Exec=yo3mfs %f
+Icon=com.yo3mfs.viewer
+Terminal=false
+Categories=Graphics;3DGraphics;
+StartupNotify=true

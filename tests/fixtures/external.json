@@ -1,0 +1,22 @@
+[
+  {
+    "name": "bambu-pa.3mf",
+    "url": "https://raw.githubusercontent.com/bambulab/BambuStudio/79df7ae309be398ed30c9f397c13c9911c2edc57/resources/calib/pressure_advance/pa_pattern.3mf",
+    "sha256": "2e2c0e271a50c6f89cc42a97b134d6f678d7d3d2849fa9b48c8203586aba5111",
+    "application": "BambuStudio-01.07.03.04",
+    "instances": 1,
+    "triangles": 12,
+    "size_mm": [5.0, 5.0, 0.85],
+    "provenance": "Official BambuStudio repository calibration resource; downloaded only into ignored target/. File license metadata is empty; redistribution rights are not assumed."
+  },
+  {
+    "name": "bambu-flowrate.3mf",
+    "url": "https://raw.githubusercontent.com/bambulab/BambuStudio/79df7ae309be398ed30c9f397c13c9911c2edc57/resources/calib/filament_flow/flowrate-test-pass1.3mf",
+    "sha256": "f71b839130000caab52f99c258a575dabb0f46b1ddc74591c9e438720740e03c",
+    "application": null,
+    "instances": 9,
+    "triangles": 6920,
+    "size_mm": [124.0, 94.0, 1.4],
+    "provenance": "Official BambuStudio repository calibration resource; exporter version absent. Downloaded only into ignored target/. Redistribution rights are not assumed."
+  }
+]

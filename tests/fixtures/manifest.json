@@ -1,0 +1,21 @@
+{
+  "sample.3mf": {
+    "source": "Synthetic geometry authored for this project; no third-party model",
+    "bambu_version": null,
+    "sha256": "db6c7f83a69dbad2fe453fc63d8aadb6a260ce5f723bc1322fd9cfb4670bc855",
+    "instances": 2,
+    "triangles": 24,
+    "bounds_mm": {
+      "min": [
+        -20,
+        -15,
+        0
+      ],
+      "max": [
+        65,
+        15,
+        42.5
+      ]
+    }
+  }
+}
