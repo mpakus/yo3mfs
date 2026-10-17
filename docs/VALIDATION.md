@@ -169,3 +169,11 @@ Local verification for this update:
 - A new Apple Silicon app window visibly confirmed Help contains only Controls and YO3MFS contains About. Selecting About opened the dialog with version 1.3.0 and the unchanged credit link. User-model windows and existing preferences were not altered.
 
 These results do not claim a hosted workflow run, native Intel startup, or Windows/Linux GUI acceptance. No commit, push, tag, signing credential, or public release was created by this update.
+
+## Release publishing 1.3.1 — 2026-10-16
+
+The owner requested publishing build packages on GitHub Releases and linking them from README. The preceding [1.3.0 workflow run](https://github.com/mpakus/yo3mfs/actions/runs/38999026580) was inspected: macOS Apple Silicon, macOS Intel, Windows x64, and Linux x64 all passed on commit `4aaa266`. This supersedes the earlier empty-repository snapshot without changing the historical results above.
+
+Version 1.3.1 adds version-tag publication after the complete native build matrix, a strict four-package/version/checksum gate, combined SHA256SUMS, release notes, and direct README downloads. Uploads go to a draft before it becomes public. An interrupted draft can be resumed; existing published assets are never overwritten. Build jobs retain read-only permissions, with write access limited to the release job. The new download action is pinned to the verified official v8.0.2 commit.
+
+Local pre-publication checks passed: **46 Rust tests**, **12 Python packaging/release tests**, formatting, Clippy with `-D warnings`, actionlint, tag/Cargo version agreement, and local documentation links. Regression coverage includes mismatched tags/lockfiles, missing notes/platforms, wrong-version or modified packages, draft resumption, immutable published releases, and failed uploads staying unpublished. Publication and downloaded-asset verification are recorded separately after the hosted run finishes. Signing and remaining manual platform acceptance are unchanged.

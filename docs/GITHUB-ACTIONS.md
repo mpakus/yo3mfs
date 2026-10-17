@@ -1,4 +1,4 @@
-# GitHub builds
+# GitHub builds and releases
 
 The [Desktop checks and packages workflow](../.github/workflows/ci.yml) builds YO3MFS on four native GitHub-hosted runners:
 
@@ -11,22 +11,41 @@ The [Desktop checks and packages workflow](../.github/workflows/ci.yml) builds Y
 
 Runner labels/architectures were checked against the [official runner matrix](https://github.com/actions/runner-images) and [GitHub-hosted runner reference](https://docs.github.com/en/actions/reference/runners/github-hosted-runners). Windows and Linux ARM64 are outside the current build matrix.
 
-## First run
+## Download a release
 
-1. Push the project, including `.github/workflows/ci.yml`, `Cargo.lock`, `rust-toolchain.toml`, scripts, and committed assets, to [mpakus/yo3mfs](https://github.com/mpakus/yo3mfs). No signing secrets are required.
-2. Open [Actions](https://github.com/mpakus/yo3mfs/actions/workflows/ci.yml). A push or pull request starts the workflow automatically. After the workflow exists on the default branch, Run workflow can also start a manual run.
-3. Open a successful run and download its Artifacts: `yo3mfs-macos-arm64`, `yo3mfs-macos-x64`, `yo3mfs-windows-x64`, or `yo3mfs-linux-x64`.
-4. Extract the Actions artifact wrapper. Inside are the platform package and `SHA256SUMS`. Artifacts expire after 14 days.
+Open [Releases](https://github.com/mpakus/yo3mfs/releases/latest), choose the package for your platform, and download `SHA256SUMS` to verify it. The [README](../README.md#download-and-run) also links directly to each package for the current version. Release assets remain available independently of the 14-day Actions artifact retention period.
 
-This change configures builds; it does not push source, create a tag, select a license, or publish a GitHub Release. As of the local verification, the remote repository is empty and has no Actions runs. Record actual remote results in [VALIDATION.md](VALIDATION.md) after the first push. GitHub artifacts and public Releases are different distribution mechanisms.
+Branch pushes, pull requests, and manual branch runs produce development artifacts without publishing a Release. Open a successful [Actions run](https://github.com/mpakus/yo3mfs/actions/workflows/ci.yml) and download `yo3mfs-macos-arm64`, `yo3mfs-macos-x64`, `yo3mfs-windows-x64`, or `yo3mfs-linux-x64`. Extract the wrapper ZIP to find the native package and its single-package checksum file.
+
+## Publish a version
+
+The owner authorized version-tag publishing for v1.3.1. No personal access token or signing secret is needed; the release job uses GitHub's scoped `GITHUB_TOKEN`.
+
+1. Update the package version in `Cargo.toml` and the `yo3mfs` entry in `Cargo.lock` together.
+2. Add English notes at `docs/releases/vVERSION.md`, and update the current version and all direct package URLs in README. Keep historical validation records unchanged.
+3. Commit the reviewed change to `main`, push it, and push an annotated tag for exactly that commit. For 1.3.1:
+
+   ```bash
+   git push origin main
+   git tag -a v1.3.1 -m "YO3MFS v1.3.1"
+   git push origin v1.3.1
+   ```
+
+4. Watch the tag's Actions run. A release tag must be exactly `vMAJOR.MINOR.PATCH`, match both Cargo files, and have release notes. All four native jobs must pass before **Publish GitHub Release** starts.
+5. The release job downloads only artifacts from that same run, requires all four platforms, checks their versioned filenames and SHA-256 hashes, and combines the four checksums. It creates a draft, uploads four archives plus `SHA256SUMS`, then publishes the release as Latest.
+6. Open the public release and verify all five assets and the README links. Build success does not replace native GUI acceptance.
+
+The workflow can also be dispatched against an existing version tag, for example `gh workflow run ci.yml --ref v1.3.1`. An interrupted upload leaves a draft that a rerun can resume. Published releases are never overwritten: a rerun stops if the release is already public. Fix a published build with a new patch version; do not move its tag or replace its assets. If a release must be withdrawn, the owner can remove it from Latest or delete the affected release after reviewing the impact; retain source history and use a new version for the correction.
+
+Implementation: [release.py](../scripts/release.py). Publication uses the official [GitHub CLI release commands](https://cli.github.com/manual/gh_release_create) and a pinned [download-artifact action](https://github.com/actions/download-artifact).
 
 ## Build gates
 
-Every matrix job checks out source without persisted Git credentials, installs Python 3.13, installs the Rust version/components from `rust-toolchain.toml`, and uses `Cargo.lock`. Linux installs its native build libraries. Cargo registry, Git dependencies, and target output are cached separately by target/toolchain/lockfile.
+Every matrix job checks out source without persisted Git credentials, installs Python 3.13, installs the Rust version/components from `rust-toolchain.toml`, and uses `Cargo.lock`. Linux installs its native build libraries. Cargo registry, Git dependencies, and target output are cached separately by target/toolchain/lockfile. On a cache miss, a previous cache for the same target can be restored; Cargo rebuilds changed inputs and every check still runs.
 
 The job then runs:
 
-1. `cargo fmt --all -- --check` and Python packaging regression tests.
+1. `cargo fmt --all -- --check` and Python packaging/release regression tests.
 2. Clippy for all targets/features with `-D warnings`.
 3. Desktop/integration tests and separate core tests without GUI dependencies.
 4. An optimized release build for the explicit target triple.
@@ -35,20 +54,20 @@ The job then runs:
 7. `scripts/verify_package.py`: checksum and package structure; macOS also verifies the bundle signature and DMG, Linux checks executable permissions.
 8. Artifact upload only after all checks pass.
 
-Actions are pinned to verified release commit SHAs, with version comments. Repository permissions are `contents: read`; artifact upload does not require release write access. Jobs have a 60-minute timeout, do not fail-fast across platforms, and newer runs cancel superseded runs for the same ref/PR. No private 3MF files or optional external compatibility models are downloaded in CI.
+Actions are pinned to verified release commit SHAs, with version comments. Default permissions and build jobs are `contents: read`; only the tag publishing job receives `contents: write`. There is no `pull_request_target` or cross-run artifact promotion. Build jobs have a 60-minute timeout and do not fail-fast across platforms. Newer branch/PR runs cancel superseded runs; tag builds are not canceled this way. No private 3MF files or optional external compatibility models are downloaded in CI.
 
 ## Checksums and local reproduction
 
-For a downloaded package on Linux:
+For downloaded packages on Linux (skip entries for other platforms):
 
 ```bash
-sha256sum --check SHA256SUMS
+sha256sum --check --ignore-missing SHA256SUMS
 ```
 
-On macOS:
+On macOS, compare the result with the matching entry in `SHA256SUMS`:
 
 ```bash
-shasum -a 256 -c SHA256SUMS
+shasum -a 256 yo3mfs-VERSION-aarch64-apple-darwin.dmg
 ```
 
 On Windows PowerShell, compare the result with `SHA256SUMS`:
@@ -71,4 +90,4 @@ On Windows/Linux, substitute the native target and omit `--dmg`. The verifier ex
 
 CI tests do not open a native GUI or exercise drag-and-drop, trackpads, physical GPUs, or Linux portals. Those remain manual acceptance checks on every target. Linux packages are built on Ubuntu 24.04 and do not promise compatibility with every distribution or older glibc.
 
-macOS packages have ad-hoc signatures, without Developer ID/notarization. Windows packages are not Authenticode-signed. Public-release signing, license selection/dependency review, clean-system installation, and a release-publication workflow remain separate decisions. The current workflow does not publish releases automatically or request signing secrets.
+macOS packages have ad-hoc signatures, without Developer ID/notarization. Windows packages are not Authenticode-signed. Signing, license selection/dependency review, and clean-system installation checks remain outstanding. Publishing a downloadable release does not claim those checks are complete or grant an open-source license.

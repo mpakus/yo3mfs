@@ -1,6 +1,6 @@
 # YO3MFS — desktop 3MF viewer specification
 
-**Status:** v1.3.0 contract; implementation and local macOS builds are available. Full platform acceptance and public distribution are not complete. Evidence is recorded in [docs/VALIDATION.md](docs/VALIDATION.md).
+**Status:** v1.3.1 contract; implementation and local macOS builds are available. Full platform acceptance is not complete; version-tag release publication is authorized. Evidence is recorded in [docs/VALIDATION.md](docs/VALIDATION.md).
 
 **Date:** October 16, 2026. **Product name:** YO3MFS.
 
@@ -61,7 +61,7 @@ The minimum validated macOS version, compatibility with other Linux distribution
 
 Verify system libraries, graphics drivers, and Linux file-picker portals on clean systems and document installation requirements. `scripts/package.py` creates macOS bundles/DMGs, Windows ZIPs, and Linux tar.gz archives. Linux tar.gz with explicit dependencies is the initial format; AppImage remains a portability follow-up, without dropping Linux support. Public macOS distribution needs signing/notarization and Gatekeeper validation; Windows packages also need clean-machine verification and documented signing status. An internal unsigned build is not a completed public release.
 
-GitHub Actions must build all four targets on native runners, using the pinned toolchain and lockfile. Pushes, pull requests, and manual runs perform checks before uploading packages/checksums. Workflow artifacts do not imply automatic public release publication. Runner labels, archive names, and instructions are maintained in [docs/GITHUB-ACTIONS.md](docs/GITHUB-ACTIONS.md).
+GitHub Actions must build all four targets on native runners, using the pinned toolchain and lockfile. Pushes, pull requests, and manual runs perform checks before uploading packages/checksums. Version tags matching Cargo.toml and Cargo.lock publish a GitHub Release only after all four native jobs pass. Require release notes and exactly four packages with verified checksums; create/upload a draft before publishing it. Branch/PR builds only upload Actions artifacts. Published assets and tags must not be replaced. README links directly to the versioned downloads. Runner labels, archive names, and instructions are maintained in [docs/GITHUB-ACTIONS.md](docs/GITHUB-ACTIONS.md).
 
 ## 4. Functional requirements
 
@@ -351,7 +351,7 @@ Before public distribution:
 - Reference hardware and the full FPS/first-frame protocol; headless timing does not replace it.
 - GPU-failure injection and future automatic device recovery.
 
-The v1 implementation request has been fulfilled with code, tests, and local packages. License selection and public release publication have not been performed.
+The v1 implementation request has been fulfilled with code, tests, and local packages. License selection remains outstanding. The owner authorized GitHub Release publication for v1.3.1 and subsequent version-tag builds; this does not claim signing or full platform acceptance.
 
 ## Interface changes in 1.1
 

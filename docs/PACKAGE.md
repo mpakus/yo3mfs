@@ -23,7 +23,7 @@ Background, language, and color mode are saved locally. The last model path is n
 
 ## Package status
 
-Build artifacts include SHA-256 checksums. macOS uses an ad-hoc signature without Developer ID/notarization; Windows Authenticode signing is not configured. A successful build does not replace native GUI/clean-system testing. The project license has not yet been selected; see the repository for distribution status.
+Download versioned packages and SHA-256 checksums from [GitHub Releases](https://github.com/mpakus/yo3mfs/releases). macOS uses an ad-hoc signature without Developer ID/notarization; Windows Authenticode signing is not configured. A successful build does not replace native GUI/clean-system testing. The project license has not yet been selected; see the repository for distribution status.
 
 The bundled font license is `NotoSansSymbols2-OFL.txt` (inside `Contents/Resources` on macOS). Linux includes `share/applications/com.yo3mfs.viewer.desktop` and `share/icons/hicolor/512x512/apps/com.yo3mfs.viewer.png`; user-local launcher installation is documented in the repository README.
 

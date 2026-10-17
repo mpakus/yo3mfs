@@ -28,5 +28,12 @@ Remaining limits: coincident surfaces in intersecting parts may flicker; slicer 
 - [x] Keep About only in the YO3MFS menu; retain Controls in Help.
 - [x] Translate all project Markdown documentation to English and update the ongoing language rule.
 - [x] Configure native macOS ARM64/Intel, Windows x64, and Linux x64 checks, builds, packaging, checksums, and artifact upload.
-- [ ] Complete the first remote workflow run after the source is pushed to GitHub.
+- [x] First remote workflow run: all four native jobs passed for commit `4aaa266` (run `38999026580`).
 - [ ] Perform native GUI acceptance on Intel Mac, Windows, and Linux X11/Wayland.
+
+## Version 1.3.1 — GitHub Releases
+
+- [x] Update Cargo versions, README platform download links, and release notes.
+- [x] Publish version-tag builds after all native checks; validate the complete asset set and combined checksums.
+- [x] Keep build jobs read-only and limit release write permission to the tag publishing job.
+- [ ] Publish v1.3.1 and verify all four public downloads against SHA256SUMS.

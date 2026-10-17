@@ -8,24 +8,24 @@ Open a file, inspect it from any angle, and choose a comfortable background. YO3
 
 ![YO3MFS displaying a black and orange 3MF phone case with project colors and the scene inspector](screenshot.png)
 
-**Current version: 1.3.0.** The application has been tested locally on Apple Silicon with macOS 27. Intel Mac builds have been cross-compiled and linked; Windows and Linux have passed cross-target Rust checks. Native GitHub builds are configured for all four targets. A successful build is separate from manual GUI acceptance; see [validation results and remaining checks](docs/VALIDATION.md).
+**Current version: 1.3.1.** The application has been tested locally on Apple Silicon. All four native GitHub build jobs passed for 1.3.0; each release runs the same checks again. A successful build is separate from manual GUI acceptance; see [validation results and remaining checks](docs/VALIDATION.md).
 
 ## Download and run
 
-GitHub Actions builds these packages on pushes, pull requests, and manual runs:
+Download **[YO3MFS v1.3.1](https://github.com/mpakus/yo3mfs/releases/tag/v1.3.1)** from GitHub Releases:
 
-| Platform | Architecture | Package | Actions artifact |
-| --- | --- | --- | --- |
-| macOS | Apple Silicon / ARM64 | `.dmg` containing `.app` | `yo3mfs-macos-arm64` |
-| macOS | Intel / x64 | `.dmg` containing `.app` | `yo3mfs-macos-x64` |
-| Windows | x64 | Portable `.zip` containing `.exe` | `yo3mfs-windows-x64` |
-| Linux | x64, built on Ubuntu 24.04 | Portable `.tar.gz` | `yo3mfs-linux-x64` |
+| Platform | Architecture | Download |
+| --- | --- | --- |
+| macOS | Apple Silicon / ARM64 | [DMG](https://github.com/mpakus/yo3mfs/releases/download/v1.3.1/yo3mfs-1.3.1-aarch64-apple-darwin.dmg) |
+| macOS | Intel / x64 | [DMG](https://github.com/mpakus/yo3mfs/releases/download/v1.3.1/yo3mfs-1.3.1-x86_64-apple-darwin.dmg) |
+| Windows | x64 | [Portable ZIP](https://github.com/mpakus/yo3mfs/releases/download/v1.3.1/yo3mfs-1.3.1-x86_64-pc-windows-msvc.zip) |
+| Linux | x64, built on Ubuntu 24.04 | [Portable tar.gz](https://github.com/mpakus/yo3mfs/releases/download/v1.3.1/yo3mfs-1.3.1-x86_64-unknown-linux-gnu.tar.gz) |
 
-Open [Actions](https://github.com/mpakus/yo3mfs/actions/workflows/ci.yml), select a successful **Desktop checks and packages** run, and download the artifact for your platform. Each artifact contains a package and `SHA256SUMS`. Artifacts are retained for 14 days. The workflow produces build artifacts; it does not publish GitHub Releases automatically. The repository has no completed remote runs yet as of the local verification recorded in [VALIDATION.md](docs/VALIDATION.md).
+[SHA-256 checksums](https://github.com/mpakus/yo3mfs/releases/download/v1.3.1/SHA256SUMS) · [Release notes](docs/releases/v1.3.1.md) · [Latest release](https://github.com/mpakus/yo3mfs/releases/latest) · [All releases](https://github.com/mpakus/yo3mfs/releases)
+
+Version tags publish packages only after all four platforms pass their checks. Development builds remain available under [Actions](https://github.com/mpakus/yo3mfs/actions/workflows/ci.yml) for 14 days. Release assets are separate downloads and do not expire with Actions artifacts. See [build and release instructions](docs/GITHUB-ACTIONS.md).
 
 On macOS, open the DMG and copy `yo3mfs.app` to Applications. On Windows, extract the ZIP and run `yo3mfs.exe`. On Linux, extract the archive and run `./yo3mfs`. Packages are not signed for public distribution: macOS uses an ad-hoc signature without Developer ID/notarization; Windows Authenticode signing is not configured. Linux archives do not bundle system libraries.
-
-Local macOS packages from the color implementation are in `dist/1.3.0-macos-arm64/` and `dist/1.3.0-macos-x86_64/`. The updated menu and GitHub packaging checks use separate directories recorded in [VALIDATION.md](docs/VALIDATION.md). `dist/` is excluded from Git.
 
 To run from source, install Rust/rustup and your platform's build tools:
 
@@ -114,12 +114,12 @@ ZIP/XML are streamed with limits, without extracting files or fetching external 
 
 - [SPEC.md](SPEC.md) — requirements, architecture, limits, and acceptance criteria.
 - [AGENTS.md](AGENTS.md) — development rules, including English documentation and both UI dictionaries.
-- [GitHub Actions](docs/GITHUB-ACTIONS.md) — runners, build artifacts, and first-push instructions.
+- [GitHub Actions](docs/GITHUB-ACTIONS.md) — runners, build artifacts, version tags, and release publishing.
 - [Bambu colors](docs/BAMBU-COLORS.md) — painting format and compatibility profile.
 - [Validation](docs/VALIDATION.md) — evidence and remaining checks.
 - [Implementation plan](tasks/plan.md) and [task status](tasks/todo.md).
 
-YO3MFS is independent and is not an official Bambu Lab product. A project license has not yet been selected; public distribution requires the owner's licensing decision and dependency-license review. Private user models are never added to the repository automatically.
+YO3MFS is independent and is not an official Bambu Lab product. A project license has not yet been selected; publishing downloads does not grant an open-source license. License selection and dependency-license review remain outstanding. Private user models are never added to the repository automatically.
 
 ## Logo and icons
 

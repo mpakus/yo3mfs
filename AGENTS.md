@@ -6,7 +6,7 @@
 
 `yo3mfs` is an offline Rust 3MF viewer for macOS, Linux, and Windows, focused on Bambu Studio projects. The main workflow is to open or drop a file, inspect its geometry from every side, zoom, and change the background.
 
-Version 1.3.0 is implemented. Local evidence and outstanding platform checks are recorded in `docs/VALIDATION.md`. Do not present unverified compatibility as tested. Before working, read [SPEC.md](SPEC.md) and [README.md](README.md), then inspect the actual files and Git state.
+Version 1.3.1 is implemented. Local evidence and outstanding platform checks are recorded in `docs/VALIDATION.md`. Do not present unverified compatibility as tested. Before working, read [SPEC.md](SPEC.md) and [README.md](README.md), then inspect the actual files and Git state.
 
 ## Priorities and scope
 
@@ -87,9 +87,10 @@ Run with `rtk cargo run --locked`. Check a file argument with `rtk cargo run --l
 - `.github/workflows/ci.yml` must retain four native targets: macOS ARM64, macOS x64, Windows x64, and Linux x64. Do not replace Intel Mac with another Apple Silicon build.
 - Read the Rust version from `rust-toolchain.toml` and build with `Cargo.lock`. Pin actions to verified commit SHAs, with release-version comments.
 - Keep formatting, Clippy, desktop/core tests, release builds, CLI smoke checks, and package verification before artifact upload. Each archive includes a SHA-256 checksum.
-- CI has read-only repository permissions and uploads workflow artifacts. Do not add automatic release publication, signing credentials, or private-model downloads without authorization.
+- Build jobs have read-only repository permissions. The owner authorized public GitHub Releases on October 16, 2026: a `vMAJOR.MINOR.PATCH` tag matching Cargo.toml/Cargo.lock and release notes publishes all four packages plus combined SHA256SUMS after the entire matrix passes. Only the release job receives `contents: write`. Branch/PR builds never publish.
+- Keep release assets versioned and immutable: resume incomplete drafts, but never replace published assets or move a published tag. Update README download URLs and `docs/releases/vVERSION.md` with every version bump. Do not add signing credentials or private-model downloads without authorization.
 - Keep workflow behavior and artifact names synchronized with `docs/GITHUB-ACTIONS.md`. Report local validation separately from actual GitHub runs and native GUI acceptance.
 
 ## Decisions that need separate authorization
 
-Continue ordinary implementation within the user's request. A separate decision is needed to change the user contract: write to 3MF, transmit data, substantially replace the stack, or drop a promised platform. License selection and public publication also require the owner's decision. Prepare a concrete proposal and explain why that decision is needed.
+Continue ordinary implementation within the user's request. A separate decision is needed to change the user contract: write to 3MF, transmit data, substantially replace the stack, or drop a promised platform. License selection and publication outside the authorized version-tag release workflow require the owner's decision. Prepare a concrete proposal and explain why that decision is needed.
