@@ -3,6 +3,7 @@ use crate::i18n::{Key, Message};
 mod bambu;
 mod model;
 mod package;
+pub(crate) mod paint;
 mod xml;
 mod zip_index;
 
@@ -59,6 +60,7 @@ pub struct Limits {
     pub instances: usize,
     pub xml_depth: usize,
     pub component_depth: usize,
+    pub paint_depth: usize,
 }
 impl Default for Limits {
     fn default() -> Self {
@@ -73,6 +75,7 @@ impl Default for Limits {
             instances: 100_000,
             xml_depth: 128,
             component_depth: 64,
+            paint_depth: 64,
         }
     }
 }
@@ -167,6 +170,7 @@ fn read_archive_progress<R: Read + Seek>(
         },
         warnings,
         summaries: Default::default(),
+        palette: metadata.palette.clone(),
     };
     let mut resolver = Resolver {
         models: &mut models,
@@ -209,8 +213,15 @@ fn read_archive_progress<R: Read + Seek>(
             item,
             DMat4::from_scale(DVec3::splat(scale)),
             0,
-            plate,
-            None,
+            InstanceStyle {
+                plate,
+                role: None,
+                filament: metadata
+                    .object_filaments
+                    .get(&item.object)
+                    .copied()
+                    .unwrap_or(if metadata.palette.is_empty() { 0 } else { 1 }),
+            },
         )?;
     }
     if resolver.excluded > 0 {
@@ -252,6 +263,11 @@ struct Resolver<'a> {
     excluded: usize,
     bytes: usize,
 }
+struct InstanceStyle {
+    plate: Option<u32>,
+    role: Option<String>,
+    filament: u16,
+}
 impl Resolver<'_> {
     fn expand(
         &mut self,
@@ -259,9 +275,13 @@ impl Resolver<'_> {
         r: &Reference,
         parent: DMat4,
         depth: usize,
-        plate: Option<u32>,
-        role: Option<String>,
+        style: InstanceStyle,
     ) -> Result<(), ImportError> {
+        let InstanceStyle {
+            plate,
+            role,
+            filament,
+        } = style;
         check_cancel(self.cancel)?;
         self.visits += 1;
         if depth > self.limits.component_depth
@@ -383,6 +403,7 @@ impl Resolver<'_> {
                     transform: world,
                     name,
                     plate,
+                    filament,
                 });
             }
             for c in components {
@@ -391,7 +412,31 @@ impl Resolver<'_> {
                 } else {
                     None
                 };
-                self.expand(part, &c, world, depth + 1, plate, child_role)?;
+                let child_filament = if part == self.root {
+                    self.metadata
+                        .part_filaments
+                        .get(&(r.object, c.object))
+                        .copied()
+                        .or_else(|| {
+                            (c.part.as_deref().unwrap_or(part) == self.root)
+                                .then(|| self.metadata.object_filaments.get(&c.object).copied())
+                                .flatten()
+                        })
+                        .unwrap_or(filament)
+                } else {
+                    filament
+                };
+                self.expand(
+                    part,
+                    &c,
+                    world,
+                    depth + 1,
+                    InstanceStyle {
+                        plate,
+                        role: child_role,
+                        filament: child_filament,
+                    },
+                )?;
             }
             self.bytes = self.bytes.saturating_sub(temporary);
         }

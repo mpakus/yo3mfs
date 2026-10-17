@@ -267,6 +267,7 @@ impl Viewer {
                         gpu.clone(),
                         self.camera.matrix(self.aspect),
                         self.plate,
+                        self.settings.project_colors,
                     ));
                     self.axes(ui, rect, background);
                 } else {

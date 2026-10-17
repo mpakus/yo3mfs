@@ -2,10 +2,24 @@
 use glam::{DMat4, DVec3};
 use std::collections::BTreeMap;
 
+pub const NEUTRAL: [u8; 3] = [174, 194, 209];
+
+pub fn packed_color(rgb: [u8; 3]) -> u32 {
+    u32::from_le_bytes([rgb[0], rgb[1], rgb[2], 255])
+}
+
+#[derive(Debug)]
+pub struct FacetPaint {
+    pub triangle: usize,
+    pub(crate) code: String,
+    pub(crate) leaves: usize,
+}
+
 #[derive(Debug)]
 pub struct Mesh {
     pub vertices: Vec<DVec3>,
     pub triangles: Vec<[u32; 3]>,
+    pub painting: Vec<FacetPaint>,
 }
 
 #[derive(Debug)]
@@ -14,6 +28,8 @@ pub struct Instance {
     pub transform: DMat4,
     pub name: String,
     pub plate: Option<u32>,
+    /// One-based Bambu project filament, or zero when no assignment is present.
+    pub filament: u16,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -41,6 +57,7 @@ pub struct Scene {
     pub bounds: Bounds,
     pub warnings: Vec<crate::i18n::Message>,
     pub summaries: BTreeMap<Option<u32>, Summary>,
+    pub palette: Vec<Option<[u8; 3]>>,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -91,7 +108,12 @@ impl Scene {
     pub fn estimated_bytes(&self) -> usize {
         self.meshes
             .iter()
-            .map(|m| m.vertices.capacity() * 24 + m.triangles.capacity() * 12)
+            .map(|m| {
+                m.vertices.capacity() * 24
+                    + m.triangles.capacity() * 12
+                    + m.painting.capacity() * std::mem::size_of::<FacetPaint>()
+                    + m.painting.iter().map(|p| p.code.capacity()).sum::<usize>()
+            })
             .sum::<usize>()
             + self
                 .instances
@@ -107,6 +129,7 @@ impl Scene {
                 .sum::<usize>()
             + self.warnings.capacity() * std::mem::size_of::<crate::i18n::Message>()
             + self.summaries.len() * (std::mem::size_of::<Summary>() + 64)
+            + self.palette.capacity() * std::mem::size_of::<Option<[u8; 3]>>()
     }
 }
 
@@ -119,12 +142,14 @@ mod tests {
             meshes: vec![Mesh {
                 vertices: vec![DVec3::ZERO, DVec3::ONE],
                 triangles: vec![[0, 1, 1]],
+                painting: vec![],
             }],
             instances: vec![Instance {
                 mesh: 0,
                 transform: DMat4::from_translation(DVec3::new(5., 2., 3.)),
                 name: String::new(),
                 plate: Some(1),
+                filament: 0,
             }],
             bounds: Bounds {
                 min: DVec3::ZERO,
@@ -132,6 +157,7 @@ mod tests {
             },
             warnings: vec![],
             summaries: BTreeMap::new(),
+            palette: vec![],
         };
         scene.compute_summaries(|| Ok::<_, ()>(())).unwrap();
         let b = scene.bounds_for(Some(1)).unwrap();

@@ -1,121 +1,171 @@
-# Проверки yo3mfs
+# YO3MFS validation
 
-## Исходная версия 1.0.0
+## Original version 1.0.0
 
-Дата: 16 октября 2026. Реализация и локальная release-сборка доступны. Публичный релиз и приёмка всех целевых платформ ещё не завершены.
+Date: October 16, 2026. The implementation and local release build are available. Public release and acceptance on every target platform are not complete.
 
-## Среда и автоматические проверки
+## Environment and automated checks
 
-Локально: Apple M4 Max, 64 GiB RAM, macOS 27.0.1, arm64, Rust/Cargo 1.97.1. GUI использует общий wgpu device от eframe; отдельного WebView или runtime JavaScript нет.
+Local environment: Apple M4 Max, 64 GiB RAM, macOS 27.0.1, ARM64, Rust/Cargo 1.97.1. The GUI shares eframe's wgpu device; there is no WebView or JavaScript runtime.
 
-| Проверка | Результат |
+| Check | Result |
 | --- | --- |
-| `cargo fmt --all -- --check` | Пройдено |
-| `cargo clippy --locked --all-targets --all-features -- -D warnings` | Пройдено, без предупреждений |
-| `cargo test --locked --all-targets --all-features` | 24 теста пройдено |
-| `cargo test --locked --no-default-features` | 24 теста пройдено без GUI |
-| `cargo build --locked --release` | arm64 macOS: пройдено |
-| `cargo build --locked --release --target x86_64-apple-darwin` | Intel Mac: cross-build с линковкой пройден; запуск на Intel не выполнялся |
-| `cargo check --locked --target x86_64-pc-windows-msvc --all-targets` | Пройдено; без линковки и запуска Windows |
-| `cargo check --locked --target x86_64-unknown-linux-gnu --all-targets` | Пройдено; без линковки и запуска Linux |
+| `cargo fmt --all -- --check` | Passed |
+| `cargo clippy --locked --all-targets --all-features -- -D warnings` | Passed without warnings |
+| `cargo test --locked --all-targets --all-features` | 24 tests passed |
+| `cargo test --locked --no-default-features` | 24 tests passed without GUI |
+| `cargo build --locked --release` | ARM64 macOS: passed |
+| `cargo build --locked --release --target x86_64-apple-darwin` | Intel Mac: cross-build and linking passed; not run on Intel |
+| `cargo check --locked --target x86_64-pc-windows-msvc --all-targets` | Passed; no Windows linking/runtime check |
+| `cargo check --locked --target x86_64-unknown-linux-gnu --all-targets` | Passed; no Linux linking/runtime check |
 | `yo3mfs --version` | `yo3mfs 1.0.0` |
-| `scripts/package.py --dmg` | Созданы `.app` и `.dmg` |
-| `codesign --verify --deep --strict …/yo3mfs.app` | Пройдено; подпись ad-hoc, не Developer ID |
-| `hdiutil verify …/yo3mfs-1.0.0-arm64.dmg` | Контрольная сумма корректна |
+| `scripts/package.py --dmg` | `.app` and `.dmg` created |
+| `codesign --verify --deep --strict …/yo3mfs.app` | Passed; ad-hoc signature, not Developer ID |
+| `hdiutil verify …/yo3mfs-1.0.0-arm64.dmg` | Valid checksum |
 
-Тесты проверяют OPC root, локальные ID разных model parts, вложенные компоненты, единицы, повороты/отражения/неравномерный масштаб, нормализацию GPU, fit камеры во всех видах и проекциях, крайние жесты, настройки, отмену и замену очереди загрузок. Негативные случаи: циклы, неверные индексы/ссылки, NaN, DTD, усечённый XML, внешние URI, traversal, размер архива/XML, глубина, число экземпляров/треугольников, память строк/XML tokens и поддельное число ZIP entries, согласованность счётчиков EOCD/ZIP64 и корректный ZIP64.
+Tests cover OPC root discovery, part-local IDs, nested components, units, rotations/reflections/nonuniform scale, GPU normalization, camera fitting in every view/projection, extreme gestures, settings, cancellation, and load-queue replacement. Negative cases cover cycles, invalid indices/references, NaN, DTDs, truncated XML, external URIs, traversal, archive/XML size, depth, instance/triangle counts, string/XML-token memory, forged ZIP entry counts, EOCD/ZIP64 consistency, and valid ZIP64.
 
-Проведён mutation experiment: коэффициент inch временно изменён с 25.4 на 1.0. Тест единиц упал; исходный файл восстановлен побайтно, итоговые тесты прошли. Регрессионные тесты также воспроизвели ошибку child model без `build` и чрезмерные строки предупреждений до исправления.
+A mutation experiment temporarily changed the inch scale from 25.4 to 1.0. The unit test failed; the source was restored byte-for-byte and final tests passed. Regression tests also reproduced a child model without `build` and excessive warning strings before fixes.
 
-Отдельное ревью импортера выявило и привело к исправлению: учёт длинных строк/копий компонентов, ограничение XML tokens до накопления, нумерация экземпляров Bambu по объекту, исключение неиспользуемых вершин из габаритов, дедупликация предупреждений до выделения памяти. Публикация результата загрузки проверяет отмену под тем же mutex, что и открытие/отмена.
+A separate importer review led to fixes for long strings/component copies, XML-token limits before accumulation, per-object Bambu instance numbering, excluding unused vertices from bounds, and deduplicating warnings before allocation. Load publication checks cancellation under the same mutex as opening/canceling requests.
 
-## Ручная проверка окна
+## Manual window checks
 
-На macOS проверены:
+Verified on macOS:
 
-- Запуск пустого окна, кириллица и активные/неактивные элементы.
-- Системный диалог и открытие `sample.3mf`: два экземпляра, 24 треугольника, 85 × 30 × 42.5 мм.
-- Вращение мышью, масштаб, вписывание, вид сверху, ортографическая проекция.
-- Пресеты фона, HEX через accessibility input, неверный HEX с сохранением прежнего цвета.
-- Сохранение белого фона после выхода и перезапуска, затем возврат к тёмному.
-- Ошибка повреждённого ZIP оставляет предыдущую геометрию и информацию о ней.
-- Запуск упакованной release `.app`; в ней открыт пользователем реальный проект, в UI наблюдались 4 экземпляра и 155 276 треугольников. Приватный файл не копировался в репозиторий; его геометрическая точность и происхождение отдельно не удостоверялись.
+- Empty-window startup, Cyrillic text, and enabled/disabled controls.
+- System picker and `sample.3mf`: two instances, 24 triangles, 85 × 30 × 42.5 mm.
+- Mouse orbit, zoom, fit, top view, and orthographic projection.
+- Background presets, HEX through accessibility input, and invalid HEX retaining the previous color.
+- White background persistence after exit/restart, then restoration of the dark background.
+- Invalid ZIP errors preserve previous geometry and scene information.
+- Packaged release `.app` startup. A real project opened by the user displayed four instances and 155,276 triangles. The private file was not copied into the repository; its provenance and geometric accuracy were not independently certified.
 
-Физический drag-and-drop, pinch, все клавиатурные комбинации, Unicode-путь через CLI, системный масштаб 100/150/200%, искусственная потеря GPU и поведение чистой установки ещё требуют отдельной ручной проверки. Код соответствующих путей реализован; наличие кода не заменяет ручную приёмку.
+Physical drag-and-drop, pinch, all keyboard combinations, a Unicode CLI path, 100%/150%/200% scaling, artificial GPU loss, and clean installation still require separate manual checks. Implemented paths do not replace acceptance evidence.
 
-При потере поверхности используется восстановление eframe. При потере самого device предусмотрено системное сообщение и закрытие с рекомендацией перезапуска; автоматического пересоздания device нет. Этот аварийный путь не был искусственно вызван.
+Surface loss relies on eframe recovery. Device loss displays a system message and closes with restart guidance; automatic device recreation is not implemented. That emergency path has not been artificially triggered.
 
-## Файлы совместимости
+## Compatibility files
 
-| Образец | Происхождение | Числовой результат |
+| Sample | Provenance | Numeric result |
 | --- | --- | --- |
-| `sample.3mf` | Собственная синтетическая геометрия; [manifest](../tests/fixtures/manifest.json) | 2 экземпляра, 24 треугольника; 85 × 30 × 42.5 мм |
-| `pa_pattern.3mf` | [Официальный BambuStudio, pinned commit](https://github.com/bambulab/BambuStudio/blob/79df7ae309be398ed30c9f397c13c9911c2edc57/resources/calib/pressure_advance/pa_pattern.3mf); metadata Application = BambuStudio-01.07.03.04 | 1 экземпляр, 12 треугольников; 5 × 5 × 0.85 мм; внешняя Production part без build |
-| `flowrate-test-pass1.3mf` | [Официальный BambuStudio, pinned commit](https://github.com/bambulab/BambuStudio/blob/79df7ae309be398ed30c9f397c13c9911c2edc57/resources/calib/filament_flow/flowrate-test-pass1.3mf); версия экспортера отсутствует | 9 экземпляров, 6 920 треугольников; 124 × 94 × 1.4 мм |
+| `sample.3mf` | Project-authored synthetic geometry; [manifest](../tests/fixtures/manifest.json) | 2 instances, 24 triangles; 85 × 30 × 42.5 mm |
+| `pa_pattern.3mf` | [Official BambuStudio pinned resource](https://github.com/bambulab/BambuStudio/blob/79df7ae309be398ed30c9f397c13c9911c2edc57/resources/calib/pressure_advance/pa_pattern.3mf); Application = BambuStudio-01.07.03.04 | 1 instance, 12 triangles; 5 × 5 × 0.85 mm; external Production part without build |
+| `flowrate-test-pass1.3mf` | [Official BambuStudio pinned resource](https://github.com/bambulab/BambuStudio/blob/79df7ae309be398ed30c9f397c13c9911c2edc57/resources/calib/filament_flow/flowrate-test-pass1.3mf); exporter version absent | 9 instances, 6,920 triangles; 124 × 94 × 1.4 mm |
 
-Проверка внешних файлов воспроизводится `python3 scripts/check_reference_models.py --download`: pinned URL, SHA-256 до/после импорта и числовые ожидания из [external.json](../tests/fixtures/external.json). Файлы лежат только в игнорируемом `target/`; в исходники и дистрибутив они не включаются. Отсутствующая лицензия внутри модели не трактуется как разрешение на её распространение.
+Reproduce reference checks with `python3 scripts/check_reference_models.py --download`: pinned URLs, SHA-256 before/after import, and numeric expectations from [external.json](../tests/fixtures/external.json). Files remain in ignored `target/`, outside source/distribution packages. Absent license metadata is not permission to redistribute.
 
-SHA-256 `sample.3mf` после GUI-проверок совпадает с исходным manifest: `db6c7f83a69dbad2fe453fc63d8aadb6a260ce5f723bc1322fd9cfb4670bc855`. Код приложения не содержит сетевого клиента и не открывает входной 3MF на запись; отдельный capture сетевого трафика не выполнялся. Скрипт загрузки публичных эталонов — явный инструмент разработчика, не функция приложения.
+The SHA-256 of `sample.3mf` after GUI checks matched its manifest: `db6c7f83a69dbad2fe453fc63d8aadb6a260ce5f723bc1322fd9cfb4670bc855`. Application code contains no model-upload client and does not open input 3MF files for writing; no separate network-traffic capture was performed. The optional reference downloader is an explicit developer tool, not an application feature.
 
-## Измерение большой модели
+## Large-model measurement
 
-Создана собственная изогнутая сетка `scripts/generate_benchmark.py --cells 700`: 980 000 треугольников, 1 экземпляр, 100 × 100 × 10 мм. SHA-256 измеренного архива: `f10401f98e38fa5f0bb1a266989f6368d7a7154072f82dcaf7e50a8d74b61366`. ZIP timestamps меняют SHA при новой генерации; геометрия детерминирована.
+Project-authored curved mesh generated with `scripts/generate_benchmark.py --cells 700`: 980,000 triangles, one instance, 100 × 100 × 10 mm. Measured archive SHA-256: `f10401f98e38fa5f0bb1a266989f6368d7a7154072f82dcaf7e50a8d74b61366`. ZIP timestamps change the hash on regeneration; geometry is deterministic.
 
-Три отдельных запуска release `examples/inspect` на указанном Mac: **0.915 / 0.938 / 0.961 с** на импорт и подготовку геометрии. В первом запуске `/usr/bin/time -l` показал maximum resident set size **34 127 872 байт** (32.55 MiB). Оценка удерживаемой CPU-геометрии — 25 166 842 байт, будущих GPU-буферов — 17 656 876 байт.
+Three separate release `examples/inspect` runs on the above Mac took **0.915 / 0.938 / 0.961 s** for import and preparation. The first `/usr/bin/time -l` run reported maximum resident set size **34,127,872 bytes** (32.55 MiB). Estimated retained CPU geometry: 25,166,842 bytes; planned GPU buffers: 17,656,876 bytes.
 
-Это headless-измерение без окна, GPU upload и первого кадра. Оно не подтверждает целевой p95 кадра или лимит 5 секунд до готового кадра из SPEC. Полный протокол вращения 30 секунд и замер GPU/RSS приложения остаются отдельной приёмкой.
+These are headless measurements without window creation, GPU upload, or first frame. They do not prove the SPEC p95 frame target or five-second ready-frame goal. Thirty-second rotation and application GPU/RSS measurements remain separate acceptance work.
 
-## Платформы и распространение
+## Platforms and distribution
 
-CI создан для macOS arm64, macOS Intel, Windows x64 и Ubuntu 24.04 x64. Метки macOS runner сверены с [официальной матрицей GitHub](https://github.com/actions/runner-images). Локальный cross-target `cargo check` пройден для Windows MSVC и Linux GNU; это проверка компиляции Rust, не линковка и не проверка GUI. Workflow ещё не запускался удалённо; CI-артефактов Windows/Linux нет. Системный диалог Linux использует [XDG portal backend rfd](https://github.com/PolyMeilex/rfd), runtime X11 и Wayland ещё не проверен.
+CI was configured for native macOS ARM64, macOS Intel, Windows x64, and Ubuntu 24.04 x64. macOS runner labels were checked against the [official GitHub matrix](https://github.com/actions/runner-images). Local cross-target `cargo check` passed for Windows MSVC and Linux GNU; that verifies Rust compilation, not linking or GUI runtime. At this stage there were no remote workflow runs or Windows/Linux CI artifacts. Linux dialogs use [rfd's XDG portal backend](https://github.com/PolyMeilex/rfd); X11/Wayland runtime remained untested.
 
-Локальный macOS DMG и `.app` находятся в `dist/macos-arm64-release/`; Intel-сборка — в `dist/macos-x86_64-apple-darwin-release/`. `dist/` исключён из Git. `hdiutil create` на macOS 27 выдаёт уведомление о deprecated CLI, но завершает упаковку успешно; текущий скрипт сохраняет совместимость с более ранними macOS runner.
+Initial local `.app`/DMG packages are in `dist/macos-arm64-release/`; Intel builds are in `dist/macos-x86_64-apple-darwin-release/`. `dist/` is ignored by Git. macOS 27 warns that the `hdiutil create` CLI syntax is deprecated, but packaging succeeds; the script retains compatibility with earlier macOS runners.
 
-Публичный выпуск требует выбора лицензии проекта, проверки лицензий зависимостей, подписи/notarization и испытаний на чистых ОС. Минимальная macOS 12 указана в bundle metadata как целевой порог; фактически запуск проверен только на 27.0.1. Linux tar.gz не включает системные библиотеки; переносимость на другие дистрибутивы не заявлена.
+Public distribution still requires project/dependency-license decisions, signing/notarization, and clean-OS tests. Bundle metadata declares macOS 12 as a target minimum; actual startup has only been checked on 27.0.1. Linux tar.gz does not bundle system libraries or establish portability to other distributions.
 
-## Состояние критериев SPEC
+## SPEC acceptance status
 
-AC-04 подтверждён числовыми тестами в поддержанном профиле; AC-12 — согласованной документацией. AC-02/05/07/08/09 подтверждены описанными локальными проверками частично, с указанными выше пределами. AC-01/03/06/10/11 требуют расширения ручной, форматной и платформенной матрицы. Эти пункты не переименовываются в «готово» на основании одной macOS-сборки.
+AC-04 has numeric evidence within the supported profile; AC-12 has synchronized documentation. AC-02/05/07/08/09 have partial local evidence with the limits above. AC-01/03/06/10/11 need expanded manual, format, and platform testing. A single macOS build does not mark these complete.
 
-## Обновление 1.1.0 — 2026-10-16
+## Update 1.1.0 — 2026-10-16
 
-Изменены управление стрелками, оформление инспектора, выбор языка и About. Отчёт выше относится к исходной 1.0.0; старые показатели производительности не переизмерялись для 1.1.0.
+Changed arrow-key navigation, inspector styling, language selection, and About. Earlier sections describe 1.0.0; those performance figures were not remeasured for 1.1.0.
 
-- `cargo test --locked --all-targets --all-features`: **34 теста**. Добавлены проверки экранного направления и шага pan во всех 7 видах и обеих проекциях при двух размерах viewport; Shift/Alt; доставка egui Key events при фокусе viewport и отсутствие движения при фокусе TextEdit; сохранение языка и миграция настроек; неизвестный язык; переключение ранее созданных ошибок; паритет параметров двух словарей и отсутствие повторной интерполяции пользовательских строк.
-- `cargo test --locked --no-default-features`: **32 теста** без GUI. `cargo fmt --all -- --check` и `cargo clippy --locked --all-targets --all-features -- -D warnings` прошли.
-- Итоговые release-сборки Apple Silicon и Intel Mac с линковкой созданы; `cargo check --locked --all-targets` для Windows MSVC и Linux GNU повторно пройден. Нативный запуск Windows/Linux и Intel Mac по-прежнему не проверен.
-- Шрифтовой тест воспроизвёл отсутствие ✩ в стандартном наборе до добавления Noto Sans Symbols 2; теперь проверяет звезду, ⌘, латиницу и кириллицу. Кнопки направлений рисуются векторами и имеют текстовые accessibility labels. Лицензия шрифта входит в пакеты.
-- Проверка официальных Bambu-эталонов повторена: прежние числа экземпляров, треугольников и габариты совпали; SHA-256 входных файлов не изменились. Предупреждения headless CLI теперь на английском.
-- В настоящем окне macOS подтверждены английский старт со старыми настройками, новый инспектор, немедленный переход в русский, отображение About 1.1.0 и точного текста ссылки со звездой; Escape закрыл About. Внешняя ссылка не открывалась в браузере, URL проверен в коде.
-- Клавиатурный фокус проверен автоматизированными событиями egui, математика pan — числовыми тестами. Полный ручной прогон сочетаний, русского UI при минимальном размере окна и системных масштабах остаётся частью платформенной приёмки. Окна с открытыми пользователем моделями не закрывались.
+- `cargo test --locked --all-targets --all-features`: **34 tests**. Added screen-direction/pan-step checks for all seven views, both projections, and two viewport sizes; Shift/Alt; egui key delivery with viewport focus and no movement with TextEdit focus; saved/migrated language; unknown language; switching existing diagnostics; placeholder parity and no re-interpolation of user strings.
+- `cargo test --locked --no-default-features`: **32 tests**. Formatting and Clippy with `-D warnings` passed.
+- Final Apple Silicon and Intel release builds linked successfully. Windows MSVC and Linux GNU cross-target checks passed again. Native Windows/Linux/Intel startup was not tested.
+- A font test reproduced the missing ✩ glyph before adding Noto Sans Symbols 2, and now checks the star, ⌘, Latin, and Cyrillic. Direction buttons use vector drawing and accessible text labels. The font license is packaged.
+- Official Bambu references were rechecked: instance/triangle counts and dimensions matched, and input hashes were unchanged. Headless CLI warnings are now English.
+- A real macOS window confirmed English startup with old settings, the new inspector, immediate Russian switching, About 1.1.0, and the exact credit text/star. Escape closed About. The external link was not opened; its URL was checked in code.
+- Keyboard focus was tested through automated egui events, and pan through numeric tests. A full manual shortcut/Russian minimum-window/DPI pass remains platform acceptance work. Windows containing user models were not closed.
 
-Итоговый arm64 пакет: `dist/1.1.0-macos-arm64-final/`; он хранится отдельно от промежуточных открытых окон. Старые пакеты оставлены на месте. Intel: `dist/1.1.0-macos-x86_64-apple-darwin-release/`. Подпись локальная ad-hoc; Developer ID/notarization и публичный релиз не выполнялись.
+Final ARM64 package: `dist/1.1.0-macos-arm64-final/`, separate from open intermediate builds. Previous packages remain. Intel: `dist/1.1.0-macos-x86_64-apple-darwin-release/`. Signatures are ad-hoc; no Developer ID/notarization or public release.
 
-## Меню и макет брендинга 1.2.0 — 2026-10-16
+## Menu and branding concept 1.2.0 — 2026-10-16
 
-- Ряд верхних кнопок заменён egui MenuBar: YO3MFS / File / View / Help. Это меню внутри окна, не глобальная панель меню macOS. Пункты камеры отключены без сцены; ракурсы и проекции доступны в подменю. Правый инспектор сохранён.
-- Словари en/ru дополнены одновременно. Макет `assets/branding/concepts/yo3mfs-identity-v1.png` создан встроенным image_gen, просмотрен и сохранён вместе с prompt. На момент этой записи ожидает подтверждения владельца; логотип и иконка ещё не встроены в приложение.
-- На macOS в отдельном окне проверены File, отключённые команды View без сцены, русский Help, открытие настроек через ⌘, при раскрытом меню, F1 → Controls, Escape и закрытие пустого проверочного окна через ⌘W. Окна с пользовательскими моделями не закрывались. Прежний язык English восстановлен после проверки перевода.
-- `cargo test --locked --all-targets --all-features`: **34 теста** прошли. Форматирование и Clippy с `-D warnings` прошли. Полный ручной обход всех пунктов на Windows/Linux ещё не выполнен.
-- Для меню подписи сочетаний используют символ ⌘ на Mac и Ctrl на Windows/Linux; знаки +, − и запятая показываются как клавиши, не имена enum.
-- Пакет меню до одобрения брендинга: `dist/1.2.0-menu-preview-macos-arm64/`. На этом этапе иконка ОС оставалась прежней; итоговая сборка с утверждённой иконкой описана ниже.
+This subsection records the intermediate state before branding approval; later subsections supersede it.
 
-Release-сборки 1.2.0 для Apple Silicon и Intel выполнены с линковкой; `cargo check --locked --all-targets` для Windows MSVC и Linux GNU повторён успешно. Intel-пакет: `dist/1.2.0-menu-preview-macos-x86_64/`. На Mac после финальной сборки визуально подтверждены подписи ⌘, и ⌘Q в меню YO3MFS. Windows/Linux и Intel runtime не проверялись.
+- Replaced top buttons with an in-window egui MenuBar: YO3MFS / File / View / Help. Camera commands are disabled without a scene; orientation/projection use submenus. The right inspector remains. This is not the global macOS menu bar.
+- Updated EN/RU dictionaries together. Built-in image_gen created `assets/branding/concepts/yo3mfs-identity-v1.png`; the reviewed concept and prompt were saved. At this intermediate point the assets awaited owner approval and were not yet integrated.
+- A separate macOS window verified File, disabled View commands without a model, Russian Help, `⌘,` settings while a menu was open, F1 → Controls, Escape, and `⌘W` closing the empty test window. User-model windows remained open; English was restored afterward.
+- **34 tests** passed with all features/targets; fmt and Clippy passed. A full Windows/Linux menu walkthrough remained outstanding.
+- Shortcut labels use ⌘ on Mac and Ctrl on Windows/Linux; +, −, and comma appear as actual keys rather than enum names.
+- Menu preview package: `dist/1.2.0-menu-preview-macos-arm64/`, still using the previous OS icon. The final approved-icon build is described below.
 
-## Утверждённый брендинг 1.2.0
+Apple Silicon and Intel 1.2.0 release builds linked successfully; Windows MSVC/Linux GNU checks passed again. Intel menu-preview package: `dist/1.2.0-menu-preview-macos-x86_64/`. The final Mac menu visibly showed `⌘,` and `⌘Q`. Windows/Linux/Intel runtime was not checked.
 
-Владелец подтвердил использование логотипа и иконки 16 октября 2026 года. Рабочие PNG, ICNS, ICO и промпты находятся в `assets/branding/`; исходный обзорный макет сохранён. В About используется светлый логотип на графитовом фоне, в пустом окне — прозрачная иконка. Строка меню остаётся текстовой.
+## Approved branding 1.2.0
 
-Проверено после подключения:
+The owner approved use of the logo/icon on October 16, 2026. Production PNG, ICNS, ICO, and prompts are in `assets/branding/`; the original concept board is preserved. About uses a light wordmark on graphite; the empty window uses the transparent icon. The menu remains text-based.
 
-- `cargo test --locked --all-targets --all-features`: **35 тестов**, включая декодирование встроенных PNG, прозрачность углов и загрузку текстур. Проверка выявила слишком большой исходный логотип; встроенная версия уменьшена до 1200 × 400, мастер сохранён отдельно.
-- `cargo test --locked --no-default-features`: **32 теста** без GUI.
-- `cargo fmt --all -- --check`, Clippy с `-D warnings`: успешно.
-- Release-сборки с линковкой для Apple Silicon и Intel Mac: успешно. Итоговые пакеты: `dist/1.2.0-macos-arm64/` и `dist/1.2.0-macos-x86_64/`.
-- В обоих `.app` проверены `CFBundleIconFile`, имя YO3MFS, версия, побайтное совпадение ICNS с исходным ресурсом и `codesign --verify --deep --strict`. Подпись локальная ad-hoc; Developer ID/notarization не выполнялись.
-- Apple Silicon DMG прошёл `hdiutil verify`. При создании образов macOS сообщает о deprecated синтаксисе hdiutil, но упаковка завершается успешно.
-- Windows MSVC и Linux GNU: итоговый `cargo check --locked --all-targets --target …` пройден. Для Windows ресурс ICO действительно скомпилирован через llvm-rc (`RC_PATH`); проверены семь PNG внутри ресурса и группа иконок, а не только наличие файла ICO. Линковка и запуск Windows EXE не выполнялись.
-- ICO декодируется во всех семи размерах (16, 24, 32, 48, 64, 128, 256); ICNS декодируется до 1024 px. В PNG сохранён альфа-канал исходника; отдельные внешние пиксели имеют остаточную альфу 1/255.
-- В настоящем окне новой Apple Silicon `.app` визуально проверены иконка на светлом фоне, логотип в About, версия 1.2.0 и точная ссылка Made in Austin ✩ Texas. Название окна — YO3MFS. Чужие окна с открытыми моделями не закрывались.
+Verified after integration:
 
-Linux-пакет содержит desktop entry и PNG; app_id совпадает с именем desktop entry. Ручная проверка иконки в Linux X11/Wayland, Windows Explorer/taskbar и запуск Intel Mac остаются открытыми. Удалённый CI и публичная публикация не выполнялись.
+- All-feature/all-target tests: **35**, including embedded PNG decoding, corner transparency, and texture loading. A test caught an oversized source logo; the embedded version was reduced to 1200 × 400 and the master retained.
+- Core tests without GUI: **32**. Formatting and Clippy with `-D warnings` passed.
+- Apple Silicon and Intel release builds linked. Final packages: `dist/1.2.0-macos-arm64/` and `dist/1.2.0-macos-x86_64/`.
+- Both bundles passed checks of `CFBundleIconFile`, YO3MFS name, version, byte-identical ICNS, and `codesign --verify --deep --strict`. Ad-hoc only, without Developer ID/notarization.
+- Apple Silicon DMG passed `hdiutil verify`; deprecated hdiutil syntax warnings did not prevent successful packaging.
+- Windows MSVC/Linux GNU cross-target checks passed. The Windows ICO resource was actually compiled with llvm-rc through `RC_PATH`; all seven PNG representations and the icon group were inspected. No Windows EXE linking/runtime check was performed.
+- ICO decodes at 16, 24, 32, 48, 64, 128, and 256 px; ICNS up to 1024 px. PNGs preserve source alpha; some outer pixels retain alpha 1/255.
+- The packaged Apple Silicon window visibly showed the icon on a light background, About logo, version 1.2.0, and exact Made in Austin ✩ Texas credit. Window title: YO3MFS. Other model windows were not closed.
+
+Linux packages contain a desktop entry and PNG with matching app ID. Linux X11/Wayland icon behavior, Windows Explorer/taskbar, and Intel Mac startup remain unverified. No remote CI or public publication was performed.
+
+## Bambu colors 1.3.0 — 2026-10-16
+
+Added project palettes, object/part filaments, an independent whole/subdivided-face decoder, GPU colors, and Materials controls. Project colors is the default; Neutral switches without reimport and is saved. Old settings retain background/language. Both dictionaries, README, SPEC, and AGENTS were updated. See [BAMBU-COLORS.md](BAMBU-COLORS.md).
+
+### Automated checks
+
+- All-feature/all-target tests: **46**. Core tests: **43**. Added eleven decoder/integration tests and extended settings tests for migration/persistence.
+- Tests check exact color-boundary coordinates, area/winding for 1/2/3-side splits, extended filament numbers, inherited state 0, differently colored instances of a shared external mesh, local IDs, malformed-paint/palette fallback, paint alignment after degenerate-face removal, and subdivision/memory/JSON/palette limits.
+- Formatting, Clippy with `-D warnings`, and `git diff --check` passed.
+- Apple Silicon and Intel release builds linked. Windows MSVC/Linux GNU cross-target checks passed; Windows used `RC_PATH=/opt/homebrew/opt/llvm/bin/llvm-rc`. These were not native linking/runtime checks on those OSes.
+- The five-reference checker matched before/after SHA-256, palettes, instance filaments, painted source-face counts, and rendered-triangle counts. Geometry/dimensions of the three new files matched the 1.2.0 binary. A separate XML pass independently counted paint-tree leaves.
+
+| New sample | Exporter | Source triangles | Painted faces | After subdivision |
+| --- | --- | ---: | ---: | ---: |
+| Terrier | BambuStudio-01.10.02.76 | 144,206 | 130,369 | 169,462 |
+| 3DBenchy | BambuStudio-02.04.00.70 | 225,143 | 1 | 225,143 |
+| Nameplate | BambuStudio-01.07.03.50 | 900,712 | 24,618 | 900,712 |
+
+Benchy contains eleven degenerate source triangles, also skipped by 1.2.0. Terrier has 3,238 subdivided source faces; its longest `paint_color` string has 266 symbols. Nameplate has 150 instances and a five-color palette. Exact dimensions, hashes, URLs, and selected external ZIP members are in [external.json](../tests/fixtures/external.json). External models are not committed/bundled; redistribution rights are not assumed.
+
+### Real macOS window and packages
+
+- A separate 1.3.0 `.app` opened Terrier through the system picker: black/white paint boundaries were visible; palette #FFFFFF / #161616, 144,206 source faces, and dimensions matched headless inspection.
+- Neutral removed all colors while preserving geometry/view. After closing only the test window and relaunching, Neutral remained selected. Project colors was restored afterward.
+- Russian Materials labels and both buttons fit at 1280 × 832. English was restored and the original background retained. User-model windows were not closed.
+- Nameplate showed colored parts and 150 instances. Coincident planar surfaces exhibited color flicker because intersecting original volumes are not combined/subtracted as in a slicer. The limitation is documented in README/compatibility notes rather than presented as full Bambu visual equivalence.
+- Packages: `dist/1.3.0-macos-arm64/` and `dist/1.3.0-macos-x86_64/`. Version 1.3.0, Mach-O architectures, ICNS identity, strict codesign verification, and both DMGs were verified. Ad-hoc signing only; no Developer ID/notarization/public release.
+
+Repeated headless benchmark of the same 980,000-triangle file: **1.014 s**, maximum resident set size **37,928,960 bytes** (36.17 MiB), planned GPU buffers **19,622,484 bytes**. One run on the same Mac; not a first-frame or p95 rotation measurement. Native Windows/Linux X11/Wayland, Intel Mac, the full drag-and-drop/scaling matrix, and comparison against running Bambu Studio remain unverified.
+
+## English documentation and GitHub build preparation — 2026-10-16
+
+The duplicate Help → About entry was removed; About remains under YO3MFS. All project Markdown documentation was translated to English, including historical evidence, task documents, and asset notes. AGENTS now requires English documentation while retaining both English/Russian UI dictionaries.
+
+The workflow uses four native targets: macOS Apple Silicon/Intel, Windows x64, and Linux x64. It explicitly installs the repository's Rust toolchain and Python 3.13, caches Cargo output, runs format/Clippy/desktop/core checks, builds release binaries, checks `--version`, packages, verifies checksums/structure, and uploads artifacts. Action references are pinned to release SHAs. The workflow has read-only repository permissions and does not automatically publish releases. Portable packages now contain standalone English instructions without broken relative repository links.
+
+The remote repository `mpakus/yo3mfs` was inspected: it is public, has no default-branch commit yet, and has no workflow runs. Local validation is not evidence of a successful GitHub-hosted run. First-push instructions and artifact names are in [GITHUB-ACTIONS.md](GITHUB-ACTIONS.md).
+
+Local verification for this update:
+
+- All **12 project Markdown files** contain English text; relative links and `git diff --check` passed. Original branding prompts and font-license text remain intact.
+- `actionlint` **1.7.12** passed on the workflow. Its official release binary was checksum-verified. Pinned action SHAs were resolved from official release tags and their metadata checked; all four use Node.js 24, and artifact upload defaults to an archive containing the package/checksum.
+- Rust: **46 all-feature/all-target tests**, **43 core tests**, formatting, and Clippy with `-D warnings` passed.
+- Python: **3 packaging regression tests** passed. They use synthetic executable bytes to verify Windows ZIP contents, Linux executable permissions/launcher resources, and rejection of a modified archive. They are packaging logic tests, not Windows/Linux executable builds. The POSIX-permission test runs on macOS/Linux; Windows CI still verifies its own actual ZIP.
+- Release builds with explicit `aarch64-apple-darwin` and `x86_64-apple-darwin` targets passed. Both new DMGs passed package/checksum verification, strict codesign checks, and `hdiutil verify`. Packages are in `dist/1.3.0-github-macos-arm64/` and `dist/1.3.0-github-macos-x64/`, separate from earlier open builds.
+- A new Apple Silicon app window visibly confirmed Help contains only Controls and YO3MFS contains About. Selecting About opened the dialog with version 1.3.0 and the unchanged credit link. User-model windows and existing preferences were not altered.
+
+These results do not claim a hosted workflow run, native Intel startup, or Windows/Linux GUI acceptance. No commit, push, tag, signing credential, or public release was created by this update.

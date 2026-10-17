@@ -96,10 +96,6 @@ impl Viewer {
                         if item(ui, language.text(Key::Help), key(egui::Key::F1)) {
                             self.help = true;
                         }
-                        ui.separator();
-                        if item(ui, language.text(Key::AboutApp), None) {
-                            self.about = true;
-                        }
                     });
                 });
             });

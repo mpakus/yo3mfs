@@ -15,6 +15,11 @@ pub struct Settings {
     pub background: [u8; 3],
     #[serde(default)]
     pub language: Language,
+    #[serde(default = "project_colors_default")]
+    pub project_colors: bool,
+}
+fn project_colors_default() -> bool {
+    true
 }
 impl Default for Settings {
     fn default() -> Self {
@@ -22,6 +27,7 @@ impl Default for Settings {
             version: 1,
             background: DARK,
             language: Language::English,
+            project_colors: true,
         }
     }
 }

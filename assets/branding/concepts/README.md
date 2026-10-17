@@ -1,12 +1,12 @@
-# YO3MFS — концепция идентичности v1
+# YO3MFS — identity concept v1
 
-Статус: **утверждено владельцем 16 октября 2026 года**: «отличное лого и иконка, делаем». [Рабочие файлы и промпты](../README.md) подключены к приложению и упаковке.
+Status: **approved by the owner on October 16, 2026**. The [production assets and prompts](../README.md) are integrated into the application and packaging.
 
-[Макет](yo3mfs-identity-v1.png) содержит логотип YO3MFS, иконку приложения и уменьшенные варианты одного знака. Это обзорный лист, не финальная иконка для упаковки.
+The [concept board](yo3mfs-identity-v1.png) shows the YO3MFS wordmark, application icon, and smaller versions of the same mark. It is a presentation sheet, not the final packaging icon.
 
-Инструмент: встроенный `image_gen` (не CLI). Исходник сохранён в workspace без изменений.
+Tool: built-in `image_gen`, not a CLI. The original is preserved unchanged in the workspace.
 
-Подготовлены отдельная прозрачная иконка PNG и светлый логотип на графитовом фоне About, macOS ICNS, Windows ICO и Linux PNG. Этот обзорный лист остаётся исходным эталоном.
+A separate transparent PNG icon, light logo on the graphite About background, macOS ICNS, Windows ICO, and Linux PNG have been prepared. This board remains the original reference.
 
 ## Prompt
 

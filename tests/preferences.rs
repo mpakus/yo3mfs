@@ -8,6 +8,7 @@ fn english_is_default_and_old_preferences_keep_their_background() {
     let (old, warning) = settings::read(&path);
     assert!(warning.is_none());
     assert_eq!(old.background, [17, 34, 51]);
+    assert!(old.project_colors);
     assert_eq!(serde_json::to_value(old).unwrap()["language"], "en");
     assert_eq!(
         serde_json::to_value(Settings::default()).unwrap()["language"],
@@ -19,7 +20,7 @@ fn english_is_default_and_old_preferences_keep_their_background() {
 fn russian_choice_survives_save_and_restart() {
     let dir = tempfile::tempdir().unwrap();
     let path = dir.path().join("settings.json");
-    let value = serde_json::json!({"version":1,"background":[40,50,60],"language":"ru"});
+    let value = serde_json::json!({"version":1,"background":[40,50,60],"language":"ru","project_colors":false});
     let settings: Settings = serde_json::from_value(value.clone()).unwrap();
     settings::save(&path, &settings).unwrap();
     let (restored, warning) = settings::read(&path);

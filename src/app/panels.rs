@@ -46,6 +46,7 @@ impl Viewer {
                             self.preferences(ui);
                         } else {
                             self.model_card(ui);
+                            self.materials_card(ui);
                             self.camera_card(ui);
                             self.background_card(ui);
                             if let Some(scene) = &self.scene
@@ -160,6 +161,82 @@ impl Viewer {
             } else {
                 ui.label(RichText::new(language.text(Key::NoModelHint)).color(MUTED));
             }
+        });
+    }
+
+    fn materials_card(&mut self, ui: &mut egui::Ui) {
+        let language = self.settings.language;
+        card(ui, language.text(Key::Materials), |ui| {
+            ui.horizontal(|ui| {
+                let width = (ui.available_width() - 6.) / 2.;
+                for (key, project) in [(Key::ProjectColors, true), (Key::NeutralMaterial, false)] {
+                    if button(
+                        ui,
+                        language.text(key),
+                        self.settings.project_colors == project,
+                        width,
+                    )
+                    .clicked()
+                    {
+                        self.settings.project_colors = project;
+                        self.save_at = Some(Instant::now() + Duration::from_millis(250));
+                    }
+                }
+            });
+            if let Some(scene) = &self.scene {
+                if scene.palette.is_empty() {
+                    ui.label(
+                        RichText::new(language.text(Key::NoProjectColors))
+                            .small()
+                            .color(MUTED),
+                    );
+                } else {
+                    ui.add_space(4.);
+                    egui::CollapsingHeader::new(language.text(Key::Filaments))
+                        .id_salt("project_filaments")
+                        .default_open(true)
+                        .show(ui, |ui| {
+                            egui::ScrollArea::vertical()
+                                .id_salt("palette_scroll")
+                                .max_height(144.)
+                                .show(ui, |ui| {
+                                    for (n, color) in scene.palette.iter().enumerate() {
+                                        ui.horizontal(|ui| {
+                                            let (rect, _) = ui.allocate_exact_size(
+                                                egui::vec2(18., 18.),
+                                                egui::Sense::hover(),
+                                            );
+                                            let fill = color
+                                                .map_or(Color32::TRANSPARENT, |[r, g, b]| {
+                                                    Color32::from_rgb(r, g, b)
+                                                });
+                                            ui.painter().rect_filled(rect, 4., fill);
+                                            ui.painter().rect_stroke(
+                                                rect,
+                                                4.,
+                                                egui::Stroke::new(1., MUTED),
+                                                egui::StrokeKind::Inside,
+                                            );
+                                            ui.label(
+                                                RichText::new(format!("{:02}", n + 1))
+                                                    .monospace()
+                                                    .color(MUTED),
+                                            );
+                                            ui.monospace(color.map_or_else(
+                                                || language.text(Key::UnknownColor).into(),
+                                                settings::hex,
+                                            ));
+                                        });
+                                    }
+                                });
+                        });
+                }
+            }
+            ui.label(
+                RichText::new(language.text(Key::ColorPreviewHint))
+                    .small()
+                    .color(MUTED),
+            );
         });
     }
 

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Package a built binary without publishing or choosing a project license."""
 import argparse
+import hashlib
 import json
 import platform
 import plistlib
@@ -35,6 +36,7 @@ if system == 'Darwin':
     (contents / 'Resources').mkdir(exist_ok=True)
     shutil.copy2(root / 'assets/fonts/OFL.txt', contents / 'Resources' / 'NotoSansSymbols2-OFL.txt')
     shutil.copy2(root / 'assets/branding/yo3mfs.icns', contents / 'Resources' / 'yo3mfs.icns')
+    shutil.copy2(root / 'docs/PACKAGE.md', contents / 'Resources' / 'README.md')
     with (contents / 'Info.plist').open('wb') as f:
         plistlib.dump({
             'CFBundleName': 'YO3MFS', 'CFBundleDisplayName': 'YO3MFS',
@@ -49,12 +51,12 @@ if system == 'Darwin':
         dmg = out / f'yo3mfs-{version}-{arch}.dmg'
         subprocess.run(['hdiutil', 'create', '-volname', 'yo3mfs', '-srcfolder', str(bundle),
                         '-ov', '-format', 'UDZO', str(dmg)], check=True)
-    artifact = bundle
+    artifact = dmg if args.dmg else bundle
 else:
     folder = out / f'yo3mfs-{version}'
     folder.mkdir(exist_ok=True)
     shutil.copy2(binary, folder / binary.name)
-    shutil.copy2(root / 'README.md', folder / 'README.md')
+    shutil.copy2(root / 'docs/PACKAGE.md', folder / 'README.md')
     shutil.copy2(root / 'assets/fonts/OFL.txt', folder / 'NotoSansSymbols2-OFL.txt')
     if system == 'Windows':
         shutil.copy2(root / 'assets/branding/yo3mfs.ico', folder / 'yo3mfs.ico')
@@ -72,4 +74,8 @@ else:
         artifact = out / f'yo3mfs-{version}-{arch}.tar.gz'
         with tarfile.open(artifact, 'w:gz') as tar:
             tar.add(folder, arcname=folder.name)
+if artifact.is_file():
+    with artifact.open('rb') as stream:
+        checksum = hashlib.file_digest(stream, 'sha256').hexdigest()
+    (out / 'SHA256SUMS').write_text(f'{checksum}  {artifact.name}\n', encoding='utf-8')
 print(json.dumps({'artifact': str(artifact), 'signed_for_distribution': False}))

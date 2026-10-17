@@ -1,25 +1,25 @@
-# План реализации v1
+# Version 1 implementation plan
 
-Поручение от 16 октября 2026: реализовать приложение по SPEC.md. Работа выполняется последовательно, без публикации и без изменения исходных 3MF.
+Request dated October 16, 2026: implement the application described by SPEC.md. Work proceeds in sequence, without publication or changes to source 3MF files.
 
-## Порядок
+## Sequence
 
-1. Cargo-проект и проверяемые контракты сцены/импорта.
-2. Безопасное чтение OPC/3MF, transforms, units, Production parts и Bambu metadata.
-3. Камера, настройки фона и отменяемый загрузчик с последним актуальным запросом.
-4. Окно, GPU viewport, диалог/drop/CLI, информация и предупреждения.
-5. Проверки реального окна, упаковка для macOS, CI и инструкции для остальных ОС.
-6. Проверка качества и синхронизация документации с доказанным результатом.
+1. Cargo project and testable scene/import contracts.
+2. Safe OPC/3MF reading, transforms, units, Production parts, and Bambu metadata.
+3. Camera, background settings, and a cancellable loader that publishes only the latest request.
+4. Window, GPU viewport, picker/drop/file argument, scene information, and warnings.
+5. Real-window checks, macOS packaging, CI, and instructions for other operating systems.
+6. Quality checks and documentation synchronized with verified behavior.
 
-## Границы
+## Boundaries
 
-Общая неизменяемая сцена отделена от GUI. Один worker, один GPU device от eframe. Для core-тестов GUI выключается feature flag. Каждый импорт проверяет лимиты и целостность ссылок; новая сцена публикуется только после завершения.
+Keep the shared immutable scene separate from the GUI. Use one worker and the single GPU device supplied by eframe. Disable GUI dependencies through a feature flag for core tests. Every import validates limits and references; publish a new scene only after completion.
 
-## Риски
+## Risks
 
-- Неизвестные варианты Bambu: предупреждение или отказ по правилам SPEC, воспроизводимые fixtures.
-- Разные GPU/ОС: нативная CI-матрица плюс отдельная ручная приёмка; macOS-проверка не доказывает Windows/Linux.
-- Большие архивы: ограничения при потоковом чтении и до выделения буферов.
-- Лицензия и подпись: владелец выбирает лицензию; локальная сборка не выдаётся за подписанный публичный релиз.
+- Unknown Bambu variants: warn or reject according to SPEC and add reproducible fixtures.
+- Different GPUs/operating systems: native CI plus separate manual acceptance; macOS evidence does not prove Windows/Linux behavior.
+- Large archives: enforce limits during streaming and before buffer allocation.
+- Licensing/signing: the owner selects a license; a local build is not presented as a signed public release.
 
-Задачи и фактический статус находятся в todo.md. Числовые performance targets остаются целями до измерения на утверждённых эталонах.
+Tasks and actual status are in [todo.md](todo.md). Numeric performance targets remain goals until measured on approved reference hardware.

@@ -336,7 +336,7 @@ fn gpu_preparation_preserves_world_coordinates_and_checks_budget() {
         yo3mfs::prepared::prepare(scene, &Limits::default(), &AtomicBool::new(false)).unwrap();
     let matrix = glam::Mat4::from_cols_array_2d(&prepared.instances[0].matrix);
     let actual = matrix
-        .transform_point3(glam::Vec3::from_array(prepared.vertices[0][1]))
+        .transform_point3(glam::Vec3::from_array(prepared.vertices[0][1].position))
         .as_dvec3();
     assert!((actual - expected).length() < 1e-6);
     assert!(

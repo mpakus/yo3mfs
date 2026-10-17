@@ -1,318 +1,323 @@
-# yo3mfs — спецификация десктопного просмотрщика 3MF
+# YO3MFS — desktop 3MF viewer specification
 
-**Статус:** контракт v1.2.0; реализация и локальная macOS-сборка готовы. Полная приёмка всех платформ и публичный выпуск ещё не завершены. Фактические доказательства — [docs/VALIDATION.md](docs/VALIDATION.md).
+**Status:** v1.3.0 contract; implementation and local macOS builds are available. Full platform acceptance and public distribution are not complete. Evidence is recorded in [docs/VALIDATION.md](docs/VALIDATION.md).
 
-**Дата:** 16 октября 2026 года.
+**Date:** October 16, 2026. **Product name:** YO3MFS.
 
-**Рабочее название:** yo3mfs.
+## Version 1.3 contract — Bambu Studio colors
 
-## 1. Назначение
+The owner's request adds viewing of existing Bambu Studio painting. The application remains a viewer: no brush, paint editing, or writes to 3MF.
 
-Создать приложение на Rust для macOS, Linux и Windows, в котором пользователь открывает 3MF и сразу осматривает трёхмерную модель. Основной источник файлов — Bambu Studio; установленный Bambu Studio для просмотра не требуется.
+- Read colors from `filament_colour` in `Metadata/project_settings.config`, and object/part `extruder` assignments from `Metadata/model_settings.config`.
+- `paint_color` overrides the part color; state 0 inherits the part/object color. Support whole faces and triangle subdivisions, including extended filament numbers.
+- Preserve original coordinates, source face counts, dimensions, instances, and plate selection. Additional triangles are used only to render paint boundaries.
+- The inspector offers Project colors / Neutral and a numbered filament palette with HEX values. Save the mode; old settings receive Project colors without resetting language/background. Add every new string to EN/RU together.
+- Invalid optional painting must not hide geometry: use the base/neutral material and a persistent warning. Exceeding memory, depth, or rendered-triangle limits stops loading and preserves the last scene.
+- Limits: project JSON up to 8 MiB within the shared budget; up to 256 colors; paint-tree depth up to 64. Subdivided geometry and its instances count toward the 10-million rendered-triangle and 2 GiB accounted-memory limits.
+- Numbers identify project filaments. Physical AMS spool positions, slicing, G-code color changes, silk/gradient effects, textures, and standard Core/Materials color resources are not reproduced.
+- Verify subdivision codes, color inheritance for shared meshes/different instances, malformed codes, limits, and public Bambu files with provenance, exporter versions, and SHA-256. Implement the decoder independently; do not copy Bambu Studio code.
 
-Успешный сценарий: перетащить `.3mf` в окно → увидеть целую сцену → повернуть её к нужной стороне → приблизить деталь → выбрать удобный фон. Исходный файл остаётся неизменным.
+## 1. Purpose
 
-### Подтверждённые требования
+Build a Rust application for macOS, Linux, and Windows that opens a 3MF and immediately allows inspection of its 3D model. Bambu Studio is the primary source of files; installing Bambu Studio is not required.
 
-1. Десктопное приложение для Apple/macOS, Linux и Windows.
-2. Основной язык реализации — Rust.
-3. Открытие 3MF через диалог и перетаскивание.
-4. Просмотр модели со всех сторон, вращение, увеличение и уменьшение.
-5. Изменение общего цвета фона области просмотра.
+Successful workflow: drop a `.3mf` into the window → see the entire scene → rotate to the desired side → zoom into a detail → choose a comfortable background. The original file stays unchanged.
 
-### Принятые допущения
+### Confirmed requirements
 
-- Приложение самостоятельное, офлайн, без аккаунтов и подключения к принтеру.
-- «Во всех измерениях» означает свободный осмотр геометрии и виды по осям X/Y/Z. Сечения и просмотр слоёв печати требуют отдельного расширения задачи.
-- В одном окне открыт один документ; открытие другого файла заменяет его только после успешной загрузки.
-- Для первой версии важна геометрия; исходная раскраска и текстуры могут отображаться упрощённо с предупреждением.
-- Интерфейс по умолчанию — английский. В Settings пользователь переключает English / Русский; выбор сохраняется между запусками. Код и идентификаторы — английские. Оба словаря поддерживаются одновременно, включая ошибки и предупреждения.
+1. A desktop application for Apple/macOS, Linux, and Windows.
+2. Rust as the main implementation language.
+3. Open 3MF through a file picker or drag-and-drop.
+4. Inspect the model from all sides, rotate, zoom in, and zoom out.
+5. Change the overall viewport background color.
 
-Эти границы использованы в реализации v1; изменения отражаются в спецификации.
+### Accepted assumptions
 
-## 2. Объём первой версии
+- A standalone offline application without accounts or printer connections.
+- “In all dimensions” means free geometry inspection and X/Y/Z axis views. Sections and print-layer previews require separate scope.
+- One document per window; opening another file replaces it only after successful loading.
+- Geometry was the priority for v1.0; unsupported original visual data could be simplified with a warning. Version 1.3 extends this with the Bambu color contract above.
+- The interface defaults to English. Settings allows English/Russian switching and saves the choice. Code, identifiers, and project documentation are English. Maintain both UI dictionaries, including errors and warnings.
 
-Включены импорт геометрии 3MF, интерактивная камера, базовые виды и проекции, фон, минимальная информация о сцене, сообщения о ходе загрузки и ошибках, локальное сохранение настроек.
+These boundaries guided v1; requirement changes must be reflected here.
 
-За пределами первой версии: нарезка, G-code preview, печать, редактирование и ремонт сетки, экспорт 3MF/STL, сечения, точечные измерения, фотореалистичные материалы, точное воспроизведение Bambu painting/AMS, облако, телеметрия, автоматические обновления, плагины, ассоциация файлов в ОС и системные Quick Look/Explorer previews.
+## 2. Initial version scope
 
-Размеры X/Y/Z — габариты всей отображаемой сцены, а не инструмент измерения расстояния между выбранными точками.
+Includes 3MF geometry import, an interactive camera, standard views/projections, background controls, basic scene information, progress/errors, and local settings persistence. Version 1.3 additionally includes the color contract above.
 
-## 3. Платформы и распространение
+Out of scope: slicing, G-code preview, printing, mesh editing/repair, 3MF/STL export, sections, point-to-point measurements, photorealistic materials, physical AMS/printed-appearance simulation, cloud services, telemetry, automatic updates, plugins, OS file associations, and Quick Look/Explorer previews.
 
-| Платформа | Целевые архитектуры первой версии | Предложение по дистрибутиву |
+X/Y/Z dimensions describe the bounds of the displayed scene, not distances between selected points.
+
+## 3. Platforms and distribution
+
+| Platform | Initial target architectures | Package |
 | --- | --- | --- |
-| macOS | Apple Silicon `aarch64`, Intel `x86_64` | `.app` в `.dmg`; отдельные сборки либо universal после проверки |
-| Windows | `x86_64`, Windows 11 | Portable ZIP с `.exe` |
-| Linux | `x86_64`; Ubuntu 24.04 LTS как первая проверяемая база | Portable tar.gz; проверка X11 и Wayland |
+| macOS | Apple Silicon `aarch64`, Intel `x86_64` | Separate `.app` bundles in `.dmg`; universal builds require separate verification |
+| Windows | `x86_64`, Windows 11 | Portable ZIP with `.exe` |
+| Linux | `x86_64`; Ubuntu 24.04 LTS as the first validation baseline | Portable tar.gz; test X11 and Wayland |
 
-Минимальная версия macOS, совместимость с другими Linux-дистрибутивами и Windows 10 определяются после проверки выбранных библиотек и реальных сборок. Windows ARM64 и Linux ARM64 пока не обещаны. Поддержка macOS Intel остаётся отдельным обязательным пунктом проверки, а не следствием успешной сборки на Apple Silicon.
+The minimum validated macOS version, compatibility with other Linux distributions, and Windows 10 support depend on dependency and runtime verification. Windows ARM64 and Linux ARM64 are not promised. Intel Mac acceptance is a separate requirement, not a consequence of an Apple Silicon build.
 
-Системные библиотеки, графические драйверы и Linux file-dialog portal нужно проверить на чистой системе и перечислить в инструкциях установки. Упаковка реализована в `scripts/package.py`: `.app`/`.dmg`, Windows ZIP, Linux tar.gz. Для первого локального результата выбран tar.gz с явными системными зависимостями; первоначальное предложение AppImage остаётся следующим этапом проверки переносимости. Это не снимает поддержку Linux. Для публичной поставки macOS нужны проверка подписи/notarization и процедура Gatekeeper; Windows-дистрибутив также проверяется на чистой машине с документированным статусом подписи. Внутренняя unsigned-сборка не считается готовым публичным релизом.
+Verify system libraries, graphics drivers, and Linux file-picker portals on clean systems and document installation requirements. `scripts/package.py` creates macOS bundles/DMGs, Windows ZIPs, and Linux tar.gz archives. Linux tar.gz with explicit dependencies is the initial format; AppImage remains a portability follow-up, without dropping Linux support. Public macOS distribution needs signing/notarization and Gatekeeper validation; Windows packages also need clean-machine verification and documented signing status. An internal unsigned build is not a completed public release.
 
-## 4. Функциональные требования
+GitHub Actions must build all four targets on native runners, using the pinned toolchain and lockfile. Pushes, pull requests, and manual runs perform checks before uploading packages/checksums. Workflow artifacts do not imply automatic public release publication. Runner labels, archive names, and instructions are maintained in [docs/GITHUB-ACTIONS.md](docs/GITHUB-ACTIONS.md).
 
-### FR-01. Открытие документа
+## 4. Functional requirements
 
-- Кнопка в пустом окне, пункт меню «Файл → Открыть» и `⌘O` / `Ctrl+O` вызывают системный диалог с фильтром `.3mf` без учёта регистра.
-- Один файл можно перетащить в любую свободную область главного окна. При наведении показывается подсказка «Отпустите, чтобы открыть 3MF».
-- Путь к одному файлу можно передать при запуске: `yo3mfs "/path/to/model.3mf"`.
-- Отмена диалога ничего не меняет. Пустой путь, директория, недоступный файл и неверный формат получают понятное сообщение.
-- Одновременное перетаскивание нескольких файлов отклоняется с подсказкой «Откройте один 3MF-файл»; порядок файлов не определяет выбор молча.
-- Поддерживаются пробелы и кириллица в путях. Внутренние пути ОС хранятся в `PathBuf`/`OsString`, без обязательного преобразования в UTF-8.
-- Расширение служит подсказкой; формат проверяется по содержимому.
+### FR-01. Open a document
 
-### FR-02. Загрузка и замена сцены
+- The empty-window button, File → Open, and `⌘O` / `Ctrl+O` open the system picker with a case-insensitive `.3mf` filter.
+- A single file can be dropped onto a free area of the main window. Show a “Release to open 3MF” hint while hovering.
+- Accept one file path at startup: `yo3mfs "/path/to/model.3mf"`.
+- Canceling the picker changes nothing. Empty paths, directories, inaccessible files, and invalid formats receive clear messages.
+- Reject multiple dropped files with an instruction to open one 3MF; do not silently choose by ordering.
+- Support spaces and Cyrillic in paths. Store OS paths as `PathBuf`/`OsString`, without requiring conversion to UTF-8.
+- Treat the extension as a hint; validate the content.
 
-- Состояния: пустое окно, загрузка, готовая сцена, готовая сцена с предупреждениями, ошибка.
-- UI остаётся отзывчивым; доступны текущая стадия («Чтение архива», «Разбор модели», «Подготовка сцены») и отмена. Процент показывается только при известном объёме работы.
-- При первом открытии сцена автоматически вписывается в окно в изометрии.
-- Пока загружается новый файл, предыдущая сцена сохраняется. Ошибка или отмена возвращает к ней; при отсутствии сцены остаётся пустое окно с сообщением.
-- Если пользователь открывает B во время загрузки A, A отменяется. Только последний актуальный запрос может заменить сцену; одновременно допускается не более одной тяжёлой загрузки.
-- Подготовленные ресурсы нового документа заменяют старые атомарно после успешной загрузки, включая создание GPU-буферов. Учитывается память обеих сцен.
+### FR-02. Load and replace a scene
 
-### FR-03. Камера
+- States: empty, loading, ready, ready with warnings, and error.
+- Keep the UI responsive; expose stages (Reading archive, Parsing model, Preparing scene) and cancellation. Show a percentage only when total work is known.
+- Automatically fit the first loaded scene in an isometric view.
+- Preserve the previous scene while a new file loads. On failure/cancellation return to it; if no scene exists, keep the empty window with a message.
+- Opening B while A loads cancels A. Only the latest active request may replace the scene; allow at most one heavy load at a time.
+- Atomically replace document resources only after loading and GPU-buffer creation succeed. Account for both scenes' memory.
 
-- Вращение вокруг центра сцены на 360° с возможностью осмотреть верх и низ; перемещается камера, а не геометрия документа.
-- Масштабирование плавное, с ограничениями, исключающими пересечение точки фокуса и некорректные значения матрицы.
-- Перемещение вида доступно мышью и без средней кнопки.
-- «Показать всё» вписывает сцену, сохраняя направление камеры. «Сбросить вид» возвращает начальную изометрию, перспективу и полный охват.
-- Есть шесть ортогональных видов и изометрия, переключатель «Перспектива / Ортографическая».
-- Размер viewport, DPI и изменение окна учитываются при вычислении проекции и ввода. Нулевой размер окна, сворачивание и пустая сцена обрабатываются без деления на ноль.
+### FR-03. Camera
 
-| Действие | Основное управление | Альтернатива |
+- Orbit 360° around the scene center, including top/bottom inspection; move the camera, not document geometry.
+- Zoom smoothly with bounds that prevent crossing the focal point and invalid matrices.
+- Allow panning both with a middle mouse button and without one.
+- Fit all preserves camera direction. Reset view restores initial isometry, perspective, and full framing.
+- Provide six orthogonal views plus isometry, and Perspective / Orthographic switching.
+- Account for viewport size, DPI, and resize in projections/input. Handle zero-sized/minimized windows and empty scenes without division by zero.
+
+| Action | Primary control | Alternative |
 | --- | --- | --- |
-| Вращение | Левая кнопка + движение | Перетаскивание на трекпаде; `Alt` + стрелки при фокусе viewport |
-| Перемещение | Средняя кнопка + движение | `Shift` + левая кнопка; стрелки, `Shift` + стрелки — быстрее |
-| Масштаб | Колесо / прокрутка двумя пальцами | Кнопки и клавиши `+` / `−`; pinch при доступности события |
-| Показать всё | `F` | Кнопка |
-| Сброс вида | `Home` | Кнопка |
-| Стандартный вид / проекция | Панель видов | Выбор с клавиатуры через фокус |
+| Orbit | Left-button drag | Trackpad drag; `Alt` + arrows with viewport focus |
+| Pan | Middle-button drag | `Shift` + left-button drag; arrows, with `Shift` for faster movement |
+| Zoom | Wheel / two-finger scroll | Buttons and `+` / `−` keys; pinch when supplied by the OS |
+| Fit all | `F` | Inspector button or View menu |
+| Reset view | `Home` | View menu |
+| Standard view / projection | View controls | Keyboard focus navigation |
 
-Pinch не является единственным способом масштабирования. Жесты проверяются отдельно на macOS, Windows и Linux; UI не должен требовать трёхкнопочную мышь. Камера реагирует на ввод только внутри viewport; ввод в поле цвета, диалог или меню не вращает модель. `Esc` сначала закрывает активный popup, затем отменяет загрузку.
+Pinch must not be the only zoom method. Test gestures separately on macOS, Windows, and Linux; a three-button mouse must not be required. Camera input is scoped to the viewport; color fields, dialogs, and menus must not rotate the model. `Esc` closes an active popup before canceling loading.
 
-### FR-04. Отображение геометрии
+### FR-04. Geometry rendering
 
-- Используются depth buffer, простое освещение и нейтральный непрозрачный материал. Контуры формы должны читаться при вращении.
-- Сохраняются расположение, масштаб, поворот и отражения всех экземпляров; не выполняются автоматический ремонт, разрезание или укладка на стол.
-- Внутренняя система координат — правосторонняя, Z вверх; размеры приводятся к миллиметрам. Преобразование для GPU изолировано и проверяется тестом ориентации.
-- Габариты вычисляются после всех преобразований. `Fit all` учитывает все отображаемые экземпляры и адаптивные near/far planes.
-- Общий mesh нескольких экземпляров не копируется без необходимости. Пересчёт нормалей учитывает неравномерный масштаб; отражения не должны делать объект невидимым из-за winding/culling.
-- Оси X/Y/Z и небольшая легенда доступны как ориентир. Печатный стол конкретной модели принтера не требуется.
-- Отображаемая сцена не подменяется встроенной PNG-миниатюрой.
+- Use a depth buffer, simple lighting, and opaque project-colored or neutral material. Shape contours should remain readable while rotating.
+- Preserve position, scale, rotation, and reflections of every instance. Do not automatically repair, cut, or arrange models on a bed.
+- Use a right-handed, Z-up coordinate system and millimeter dimensions. Isolate GPU conversion and verify orientation numerically.
+- Calculate bounds after all transforms. Fit all includes every displayed instance and adaptive near/far planes.
+- Avoid copying shared meshes unnecessarily. Normal calculation must account for nonuniform scaling; reflections must not hide objects through winding/culling.
+- Provide X/Y/Z axes and a small orientation legend. A specific printer's bed is not required.
+- Never replace a model with its embedded PNG thumbnail.
 
-### FR-05. Цвет фона и настройки
+### FR-05. Background and settings
 
-- Кнопка «Фон» открывает палитру, поле `#RRGGBB` и пресеты: тёмный `#20242B`, светлый `#F2F4F7`, белый `#FFFFFF`. По умолчанию — тёмный.
-- Изменение применяется сразу ко всей области 3D-просмотра. Прозрачность и градиенты в первой версии не нужны.
-- Неверный HEX получает inline-ошибку; последний корректный цвет сохраняется. Есть команда «Вернуть фон по умолчанию».
-- Фон не меняет цвета геометрии и тему панелей интерфейса. Цвета UI, осей и подписи сохраняют читаемость при светлом и тёмном фоне.
-- Выбор фона сохраняется между запусками в пользовательской директории настроек ОС. Настройки имеют версию схемы и записываются атомарно.
-- Повреждённые настройки заменяются безопасными значениями с уведомлением. Ошибка записи не мешает просмотру: «Фон изменён, но настройку не удалось сохранить».
-- Путь к последней модели и содержимое модели по умолчанию не сохраняются.
+- Provide a color picker, `#RRGGBB` field, and presets: dark `#20242B`, light `#F2F4F7`, white `#FFFFFF`. Default to dark.
+- Apply changes immediately across the 3D viewport. Transparency and gradients are not required in v1.
+- Show an inline error for invalid HEX while retaining the last valid color. Provide Reset background.
+- Background changes do not change geometry colors or the inspector theme. Keep axes, labels, and UI readable on light/dark backgrounds.
+- Save background choices in the OS-specific user configuration directory. Version the settings schema and write atomically.
+- Replace corrupt settings with safe defaults and a notice. A write failure must not block viewing; explain that changes applied but could not be saved.
+- Do not save the last model path or model contents by default.
 
-### FR-06. Информация и сообщения
+### FR-06. Information and messages
 
-- Показываются имя файла, число отображаемых экземпляров и треугольников с учётом экземпляров, габариты X/Y/Z в мм.
-- Предупреждения доступны после загрузки, а не исчезают только в коротком toast.
-- Ошибки различают: доступ к файлу, повреждённый ZIP/XML, отсутствие геометрии, неподдерживаемое расширение, превышение лимита и невозможность GPU-рендеринга.
-- Сообщение содержит причину и доступное действие: открыть другой файл, отменить, повторить или посмотреть детали.
-- При отсутствии рабочего GPU backend приложение показывает диагностику доступными средствами ОС и завершается корректно; программный рендерер в первой версии не обещан.
-- При потере поверхности `eframe/egui-wgpu` пытается пересоздать её; CPU-сцена сохраняется. При потере самого GPU device или необработанной ошибке рендеринга приложение показывает системное сообщение и запрашивает закрытие с рекомендацией перезапуска. Автоматическое пересоздание device и восстановление сцены после него в v1 не реализовано. Файл на диске не меняется; искусственная потеря device ещё не проверена.
+- Show filename, displayed instance count, original triangle count including instances, and X/Y/Z dimensions in mm. Subdivisions are counted separately by headless inspection.
+- Keep warnings accessible after loading; do not show them only in a transient toast.
+- Distinguish access errors, invalid ZIP/XML, absent geometry, unsupported extensions, resource limits, and GPU rendering failures.
+- Include the reason and an available action: open another file, cancel, retry, or inspect details.
+- If no GPU backend works, show diagnostics through available OS facilities and exit cleanly. A software renderer is not promised.
+- On surface loss, `eframe/egui-wgpu` attempts recreation while retaining the CPU scene. On device loss or an unhandled rendering error, show a system message and request closing/restarting. Automatic device recreation/scene restoration is not implemented in v1. Disk contents remain unchanged; artificial device-loss testing is still outstanding.
 
-## 5. Совместимость с 3MF и Bambu Studio
+## 5. 3MF and Bambu Studio compatibility
 
-«Открыть любой 3MF» означает принимать файл от любого производителя и определять его содержимое. Обещать полную визуальную поддержку всех существующих и будущих расширений нельзя: ниже зафиксирован проверяемый профиль первой версии.
+“Open any 3MF” means accepting files from any producer and inspecting their contents. Full visual support for every existing/future extension cannot be promised; the following profile defines testable behavior.
 
-### 5.1. Профиль импорта
+### 5.1. Import profile
 
-3MF использует пакет с XML-частями, ресурсами и build items. Основой служат [3MF Core](https://github.com/3MFConsortium/spec_core/blob/master/3MF%20Core%20Specification.md) и [Production Extension](https://github.com/3MFConsortium/spec_production/blob/master/3MF%20Production%20Extension.md).
+3MF packages contain XML parts, resources, and build items. The basis is [3MF Core](https://github.com/3MFConsortium/spec_core/blob/master/3MF%20Core%20Specification.md) and the [Production Extension](https://github.com/3MFConsortium/spec_production/blob/master/3MF%20Production%20Extension.md).
 
-| Содержимое | Требуемое поведение первой версии |
+| Content | Required behavior |
 | --- | --- |
-| Core mesh: vertices/triangles | Прочитать и проверить индексы и конечность координат |
-| Build items, components, transforms | Восстановить все экземпляры корневого build с правильным порядком преобразований |
-| Единицы | Учесть micron, millimeter, centimeter, inch, foot, meter; при отсутствии — millimeter |
-| Несколько model parts | Разрешать OPC relationships и Production `path`; object ID локален для соответствующей части |
-| Повторные ссылки на mesh | Разделять геометрию и экземпляры |
-| Неиспользуемые ресурсы | Не добавлять на сцену только потому, что они присутствуют в архиве |
-| Core base materials / необязательные цвета и текстуры | Геометрия нейтральная; постоянное предупреждение об упрощённом отображении |
-| Неизвестное обязательное расширение | Отклонить документ с названием/namespace расширения |
-| Неизвестное необязательное расширение | Если Core-геометрия доступна и корректна — показать с предупреждением о возможном отличии |
-| Пустой build или отсутствие пригодной геометрии | Сообщить об отсутствии геометрии, не выдавать thumbnail за модель |
-| Повреждённая структура или обязательная ссылка | Отклонить импорт целиком; не показывать молча неполную сцену |
+| Core mesh: vertices/triangles | Read and validate indices and finite coordinates |
+| Build items, components, transforms | Reconstruct root-build instances with correct transform ordering |
+| Units | Support micron, millimeter, centimeter, inch, foot, meter; default to millimeter |
+| Multiple model parts | Resolve OPC relationships and Production `path`; object IDs are part-local |
+| Repeated mesh references | Separate geometry from instances |
+| Unused resources | Do not add resources to the scene merely because they exist in the archive |
+| Core base materials / optional colors and textures | Use a neutral/base material and persistent simplification warning; Bambu colors follow the 1.3 contract |
+| Unknown required extension | Reject with its name/namespace |
+| Unknown optional extension | If Core geometry is valid, show it with a warning about possible differences |
+| Empty build / no usable geometry | Report absent geometry; do not substitute a thumbnail |
+| Broken structure or required reference | Reject the import; never silently show an incomplete scene |
 
-Корневая модель определяется по relationships, а не имени файла. Build-секции дочерних частей не добавляются как самостоятельные сцены. Namespace разбирается по URI, а не конкретному префиксу. Порядок матриц, соглашение о строках/столбцах и смена единиц между частями закрепляются числовыми тестами. Это требования нашего импортера на основе указанных спецификаций; заявление о полной сертификации 3MF не делается.
+Discover the root model through relationships, not its filename. Do not add child-part build sections as independent scenes. Resolve namespaces by URI rather than a particular prefix. Test matrix order, row/column conventions, and inter-part unit conversion numerically. These are importer requirements based on the specifications, not a claim of full 3MF certification.
 
-### 5.2. Особенности Bambu
+### 5.2. Bambu-specific behavior
 
-В [исходниках Bambu Studio](https://github.com/bambulab/BambuStudio/blob/master/src/libslic3r/Format/bbs_3mf.cpp) присутствуют собственные части, в частности `Metadata/model_settings.config`, `Metadata/project_settings.config` и `Metadata/slice_info.config`. Это ориентир для совместимости, а не стабильный публичный API.
+[Bambu Studio source](https://github.com/bambulab/BambuStudio/blob/master/src/libslic3r/Format/bbs_3mf.cpp) defines custom parts such as `Metadata/model_settings.config`, `Metadata/project_settings.config`, and `Metadata/slice_info.config`. These are compatibility references, not a stable public API.
 
-- Импорт стандартной геометрии не должен зависеть от наличия необязательных Bambu-настроек.
-- Адаптер Bambu выделяется отдельно; при распознанных метаданных он определяет роли частей, чтобы negative volumes, modifiers и служебная геометрия не выглядели как обычные печатаемые детали.
-- Для известных непечатных ролей допустимо исключение из основного вида с явным числом исключённых частей и предупреждением. Часть с неизвестной ролью остаётся видимой; предупреждение перечисляет такие части и объясняет, что они могут быть служебными. Такой документ нельзя помечать как полностью поддержанный.
-- Boolean-результат вычитания negative volumes в первой версии не рассчитывается. При их наличии постоянно показывается «Показана исходная геометрия; вычитания не применены». Такой файл считается частично поддержанным.
-- Если принадлежность к plate распознана однозначно, доступен выбор «Все / Пластина N». Иначе показывается сцена в исходных координатах с предупреждением, без догадок о распределении по пластинам.
-- Для `.gcode.3mf` с доступной геометрией применяется обычный импорт; при наличии только траекторий выводится «Файл содержит данные печати без 3D-геометрии. Просмотр слоёв пока не поддерживается».
-- Точное отображение окраски граней, filament/AMS assignments и внешнего вида печати не входит в первую версию. Отсутствие такой поддержки явно сообщается.
+- Standard geometry import must not require optional Bambu settings.
+- Keep a separate adapter that recognizes part roles, so negative volumes, modifiers, and helper geometry are not presented as ordinary printable parts.
+- Known nonprintable roles may be excluded from the main view with a count and warning. Keep unknown roles visible with a warning that they may be helper geometry; do not claim complete support for such a document.
+- Do not calculate Boolean subtraction of negative volumes in v1. Keep a persistent warning that original geometry is shown without subtractions; classify the file as partially supported.
+- Offer All plates / Plate N when assignments are unambiguous. Otherwise show original coordinates with a warning, without guessing plate membership.
+- Import available geometry in `.gcode.3mf` normally. For toolpaths alone, explain that no usable 3D geometry exists and toolpath preview is unsupported.
+- Version 1.3 supports palettes, filament assignments, and subdivided face painting. Physical AMS slots and printed appearance are not simulated; see [Bambu colors](docs/BAMBU-COLORS.md).
 
-Поддержка Bambu подтверждается корпусом файлов с записанной версией экспортировавшего Bambu Studio. Проверен `pa_pattern.3mf` с метаданными BambuStudio-01.07.03.04 и калибровочный Core-файл без версии экспортера из официального репозитория. Источники, SHA-256 и результаты находятся в `tests/fixtures/external.json` и `docs/VALIDATION.md`; это покрытие отдельных файлов, а не сертификация версии приложения. Файл с новым вариантом формата сначала становится воспроизводимым тестом, затем расширяет матрицу совместимости.
+A corpus with exporter versions supports compatibility claims. Five public files cover selected exports; provenance, hashes, and results are in `tests/fixtures/external.json` and `docs/VALIDATION.md`. This is file-level evidence, not certification of entire application versions. Make each new format variant a reproducible test before extending the compatibility matrix.
 
-## 6. Ограничения и безопасная загрузка
+## 6. Limits and safe loading
 
-Чтение только локальное. Внешние ссылки, встроенный G-code и содержимое метаданных не выполняются. DTD и внешние XML-сущности отключены; архив не извлекается в файловую систему.
+Read local data only. Do not execute external references, embedded G-code, or metadata. Disable DTDs/external XML entities; do not extract the archive to the filesystem.
 
-Следующие ограничения реализованы; их достаточность для крупных реальных моделей продолжает проверяться:
+The following limits are implemented; their adequacy for large real models remains subject to testing:
 
-| Ресурс | Начальный предел |
+| Resource | Initial limit |
 | --- | --- |
-| Размер входного файла | 512 MiB |
-| Число ZIP entries | 10 000; EOCD/ZIP64 проверяется до построения индекса |
-| ZIP central directory | 64 MiB и оценка памяти в пределах общего бюджета |
-| Сумма распакованных байтов фактически читаемых частей | 2 GiB |
-| Один XML model part | 512 MiB распакованных данных |
-| Глубина XML / компонентов | 128 / 64 |
-| Один XML token | до 1 MiB, с уменьшением при малом бюджете |
-| Атрибуты / namespace bindings | 64 на элемент / 64 активных binding |
-| Значение атрибута / URI namespace | 64 KiB / 2 KiB |
-| Сумма треугольников уникальных mesh | 5 000 000 |
-| Треугольники с учётом экземпляров | 10 000 000 |
-| Число экземпляров | 100 000 |
-| Учитываемые CPU/GPU-буферы импорта и обеих сцен вместе | 2 GiB; GPU-лимиты могут потребовать меньшего значения |
+| Input file | 512 MiB |
+| ZIP entries | 10,000; validate EOCD/ZIP64 before building an index |
+| ZIP central directory | 64 MiB, with estimated memory within the shared budget |
+| Expanded bytes of parts actually read | 2 GiB |
+| Project color JSON | 8 MiB, up to 256 filaments, within the shared budget |
+| Paint tree | Depth up to 64; leaves count toward rendered-triangle limits |
+| Single XML model part | 512 MiB expanded |
+| XML / component depth | 128 / 64 |
+| Single XML token | Up to 1 MiB, reduced for small budgets |
+| Attributes / namespace bindings | 64 per element / 64 active bindings |
+| Attribute value / namespace URI | 64 KiB / 2 KiB |
+| Total triangles in unique meshes | 5,000,000 |
+| Rendered triangles including instances | 10,000,000 |
+| Instances | 100,000 |
+| Accounted import and old/new scene CPU/GPU buffers | 2 GiB; GPU limits may impose a lower cap |
 
-Для учитываемых структур пределы проверяются до выделения памяти и во время потокового чтения; арифметика бюджетов использует checked/saturating операции. Бюджет — консервативная оценка буферов и структур, а не жёсткий OS RSS limit: накладные расходы драйвера, runtime и аллокатора требуют отдельного измерения. Ограничение распакованных байтов не разрешает одновременно держать весь XML в памяти. При невозможности уложиться в бюджет импорт прекращается с названием лимита; ухудшать геометрию без уведомления нельзя.
+Check accounted structures before allocation and during streaming; use checked/saturating budget arithmetic. The budget conservatively estimates buffers/structures, not a hard OS RSS limit: driver, runtime, and allocator overhead need separate measurement. Expanded-byte limits do not permit retaining the entire XML at once. When a budget cannot be met, stop with a named limit; do not silently degrade geometry.
 
-Нормализуются пути внутри пакета; переход за корень, внешние URI и неоднозначные дубликаты частей отклоняются. Начальный `/` в OPC URI означает корень пакета, а не абсолютный путь ОС. Проверяются CRC читаемых ZIP entries, ссылки, циклы, индексы, `NaN`/`Infinity` и переполнение размеров. Вырожденные треугольники могут быть пропущены только с числом пропусков; если пригодных граней нет, импорт завершается ошибкой.
+Normalize package paths and reject root escapes, external URIs, and ambiguous duplicate parts. A leading `/` in an OPC URI denotes the package root, not an OS path. Validate ZIP CRCs, references, cycles, indices, `NaN`/`Infinity`, and size overflows. Degenerate triangles may be skipped only with a count; fail if no usable faces remain.
 
-Отмена проверяется между порциями чтения, разбора и подготовки геометрии. Нет обещания мгновенной отмены блокирующего вызова ОС, но после его возврата устаревшая задача обязана завершиться без публикации результата.
+Check cancellation between read, parse, and geometry-preparation batches. A blocking OS call cannot be promised instant cancellation, but an obsolete job must exit without publishing once the call returns.
 
-## 7. Архитектура
+## 7. Architecture
 
-### Решение D-001: Rust UI и собственная область 3D
+### Decision D-001: Rust UI with a custom 3D viewport
 
-**Статус:** принято и реализовано, 16 октября 2026 года.
+**Status:** accepted and implemented, October 16, 2026.
 
-Нужны три настольные платформы, системный диалог, mouse/trackpad input и GPU-просмотр mesh. Используется `egui/eframe` для окна и интерфейса, `wgpu` для 3D через интеграцию `egui-wgpu`. [eframe](https://docs.rs/eframe/latest/eframe/) предоставляет desktop framework; [wgpu](https://wgpu.rs/) — переносимый графический слой. Native file dialogs предлагает [rfd](https://github.com/PolyMeilex/rfd).
+The application needs three desktop platforms, a system picker, mouse/trackpad input, and GPU mesh rendering. Use `egui/eframe` for the window/UI and `wgpu` through `egui-wgpu` for 3D. [eframe](https://docs.rs/eframe/latest/eframe/) provides the desktop framework, [wgpu](https://wgpu.rs/) the portable graphics layer, and [rfd](https://github.com/PolyMeilex/rfd) system file dialogs.
 
-Причины: основной код остаётся на Rust, UI и viewport используют одну графическую интеграцию, для одного просмотрщика не требуется отдельный веб-фронтенд. Цена выбора: камера, scene graph, материалы и обработка формата реализуются нами; системный внешний вид и доступность элементов нужно проверять, а не предполагать.
+Reasons: keep the main code in Rust, share one graphics integration between UI and viewport, and avoid a separate web frontend for a single viewer. Tradeoffs: camera, scene graph, materials, and format handling are project responsibilities; native appearance and accessibility need verification rather than assumption.
 
-Рассмотренные альтернативы: Tauri добавляет веб-стек; Bevy полезен для более сложных интерактивных сцен, но приносит дополнительную модель приложения; lib3mf может расширить поддержку формата, но добавляет нативную библиотеку и вопросы сборки/FFI. Эти варианты не исключены навсегда; замена основы требует обновить решение и проверить последствия для трёх платформ.
+Alternatives considered: Tauri adds a web stack; Bevy suits more complex interactive scenes but brings another application model; lib3mf could broaden format support but adds a native library and build/FFI concerns. These choices are not permanently excluded; replacing the foundation requires updating this decision and evaluating all three platforms.
 
-| Область | Библиотека / подход |
+| Area | Library / approach |
 | --- | --- |
-| Язык | Rust stable, edition 2024 |
-| Окно и UI | `eframe`, `egui`, совместимый `egui-wgpu` |
-| Рендерер | `wgpu`, WGSL, depth buffer; ресурсы общего device |
-| Математика | `glam`; точность импорта выбирается с учётом преобразований и масштаба |
-| Контейнер и XML | `zip` и потоковый [quick-xml](https://github.com/tafia/quick-xml) |
-| Диалог открытия | `rfd` |
-| Настройки | `serde`, `serde_json`, системная директория через `directories` |
-| Ошибки | `thiserror`; предупреждения отдельно от фатальных ошибок |
-| Фоновая работа | Один worker и ограниченные каналы; async runtime пока не требуется |
+| Language | Rust stable, edition 2024 |
+| Window / UI | `eframe`, `egui`, compatible `egui-wgpu` |
+| Rendering | `wgpu`, WGSL, depth buffer, shared-device resources |
+| Mathematics | `glam`; import precision accounts for transforms and scale |
+| Container / XML | `zip` and streaming [quick-xml](https://github.com/tafia/quick-xml) |
+| File picker | `rfd` |
+| Settings | `serde`, `serde_json`, OS directory through `directories` |
+| Errors | `thiserror`; warnings separate from fatal errors |
+| Background work | One worker with bounded communication; no async runtime required |
 
-Проверенный toolchain и консервативно заявленный MSRV — Rust 1.97.1. Основные версии: eframe/egui 0.37.0, wgpu 30.0.1 через eframe, glam 0.34.1, zip 9.0.4, quick-xml 0.42, rfd 0.17.2. Полные версии закреплены в Cargo.lock. Один wgpu device используется UI и 3D viewport; Depth32Float, MSAA 4×, индексированные mesh и GPU instancing.
+The tested toolchain and conservative MSRV are Rust 1.97.1. Main versions: eframe/egui 0.37.0, wgpu 30.0.1 through eframe, glam 0.34.1, zip 9.0.4, quick-xml 0.42, rfd 0.17.2. `Cargo.lock` pins exact dependencies. The UI and viewport share one wgpu device, using Depth32Float, 4× MSAA, indexed meshes, and GPU instancing.
 
-Импорт и композиция преобразований используют f64. Перед f32 GPU-буферами вычитается локальный центр mesh и нормализуется мировая сцена, чтобы сохранять точность модели далеко от начала координат. Габариты и статистика по пластинам кэшируются при импорте, не пересчитываются каждый кадр.
+Import and transform composition use f64. Before constructing f32 GPU buffers, subtract each mesh's local center and normalize the world scene to preserve precision far from the origin. Cache bounds and per-plate statistics during import rather than recalculating every frame.
 
-### Поток данных
+### Data flow
 
 ```mermaid
 flowchart LR
-    Open[Диалог / drop / аргумент запуска] --> Request[Запрос загрузки и отмена]
+    Open[Picker / drop / file argument] --> Request[Load request and cancellation]
     Request --> Import[Worker: ZIP, XML, Bambu adapter]
-    Import --> Validate[Проверка ссылок, лимитов, преобразований]
-    Validate --> Scene[Неизменяемая сцена и предупреждения]
-    Scene --> Render[GPU-ресурсы и viewport]
-    Camera[Камера] --> Render
-    Settings[Фон и настройки] --> Render
+    Import --> Validate[Validate references, limits, transforms]
+    Validate --> Scene[Immutable scene and warnings]
+    Scene --> Render[GPU resources and viewport]
+    Camera[Camera] --> Render
+    Settings[Background and settings] --> Render
 ```
 
-`Scene` владеет уникальными mesh и экземплярами с мировыми преобразованиями. Камера и фон находятся вне сцены. `Result<Scene, ImportError>` возвращает сцену с предупреждениями; фатальная ошибка не содержит «успешной» частичной сцены. Идентичность ресурса — пара `(model_part, object_id)`, а не глобальный XML ID.
+`Scene` owns unique meshes and instances with world transforms. Camera/background are separate. `Result<Scene, ImportError>` returns a scene with warnings; a fatal error does not include a supposedly successful partial scene. Resource identity is `(model_part, object_id)`, not a global XML ID.
 
-### Структура реализации
+### Implementation structure
 
 ```text
 Cargo.toml / Cargo.lock / rust-toolchain.toml
 src/
-  main.rs                 # запуск и аргумент пути
-  lib.rs                  # тестируемые модули
-  app.rs                  # окно, события и состояния загрузки
-  import/                 # ZIP, OPC, XML, валидация
-    bambu.rs              # Bambu metadata и роли частей
-  scene.rs                # mesh, экземпляры, габариты
-  camera.rs               # orbit, pan, zoom, проекции
-  renderer.rs             # GPU-ресурсы и отрисовка
-  settings.rs             # фон, язык, чтение и запись настроек
-  i18n/                   # исчерпывающие словари English / Русский
-  app/                    # инспектор, настройки, About и тема
-  loader.rs               # один отменяемый worker
-  prepared.rs             # подготовка f32 геометрии вне UI
+  main.rs                 # startup and file argument
+  lib.rs                  # testable modules
+  app.rs                  # window, events, loading states
+  import/                 # ZIP, OPC, XML, validation
+    bambu.rs              # Bambu metadata and part roles
+    paint.rs              # independent bounded paint decoder
+  scene.rs                # meshes, instances, bounds
+  camera.rs               # orbit, pan, zoom, projections
+  renderer.rs             # GPU resources and drawing
+  settings.rs             # background, language, material mode, persistence
+  i18n/                   # exhaustive English / Russian dictionaries
+  app/                    # inspector, menus, settings, About, theme
+  loader.rs               # one cancellable worker
+  prepared.rs             # f32 geometry preparation outside the UI
 assets/shaders/           # WGSL
 tests/
   import_3mf.rs
-  fixtures/               # небольшие модели и manifest происхождения
-docs/VALIDATION.md        # результаты и оставшаяся приёмка
-scripts/                  # упаковка и воспроизводимые проверки
-.github/workflows/ci.yml  # четыре нативных runner-конфигурации
+  bambu_colors.rs
+  fixtures/               # small models and provenance manifests
+docs/VALIDATION.md        # evidence and remaining acceptance
+scripts/                  # packaging and reproducible verification
+.github/workflows/ci.yml  # four native runner configurations
 SPEC.md / AGENTS.md / README.md
 ```
 
-Один Cargo-пакет достаточен для начала. Подключение GUI не должно быть обязательным для логических тестов importer/camera.
+One Cargo package is sufficient. GUI dependencies must not be required for importer/camera logic tests.
 
-### Стиль и ошибки
+### Style and errors
 
-`rustfmt`, английские идентификаторы, небольшие модули с ясным владением данными. На входных данных не используются panic/unwrap. Основные варианты существующего `ImportError` (остальные — в `src/import/mod.rs`):
+Use `rustfmt`, English identifiers, and small modules with clear ownership. Do not panic or unwrap input data. Error categories include unsupported required extensions, resource limits, invalid data, IO/ZIP failures, cancellation, and absent geometry; actual types are defined in `src/import/mod.rs`. The UI translates typed diagnostics into readable messages and appends technical ZIP/IO/GPU details where useful.
 
-```rust
-#[derive(Debug, thiserror::Error)]
-pub enum ImportError {
-    #[error("Не поддерживается обязательное расширение: {0}")]
-    Unsupported(String),
-    #[error("Превышен лимит: {0}")]
-    Limit(&'static str),
-}
-```
+## 8. Performance and usability
 
-UI переводит тип ошибки в понятное сообщение. Техническая причина ZIP/IO/GPU добавляется к пользовательскому объяснению в сообщении об ошибке.
+- Parsing does not block the UI. Under normal OS conditions, show loading feedback within 100 ms of accepting a request.
+- Release target: first ready frame within 5 s for a local file up to 100 MiB and one million triangles including instances; p95 frame time ≤ 33.3 ms during continuous rotation in a 1920×1080 viewport.
+- Measurement protocol: three opens after process startup and 30 seconds of rotation; record file/SHA-256, CPU/GPU/RAM, OS, backend, DPI, time, and peak memory. Record first-time shader initialization separately.
+- Until reference hardware is approved on each OS, these are goals, not verified guarantees. Changing them requires a reason and a specification update.
+- No continuous redraw while idle; request frames for input, window changes, and loading.
+- Main actions are keyboard-accessible, focus is visible, and icons have labels/tooltips. Verify Cyrillic and 100%/150%/200% scaling manually.
+- Default window size: 1280×800 logical pixels; minimum supported area: 800×600. Fit smaller screens within their available work area.
 
-## 8. Производительность и удобство
+## 9. Verification and acceptance criteria
 
-- Разбор не блокирует UI; индикатор загрузки появляется не позже 100 мс после принятия запроса при нормальном состоянии ОС.
-- Цель для release-сборки: готовый первый кадр за ≤ 5 с для локального файла до 100 MiB и 1 млн треугольников с учётом экземпляров; p95 времени кадра ≤ 33,3 мс при непрерывном вращении в viewport 1920×1080.
-- Измерение: три открытия после запуска процесса и 30 секунд вращения; записываются файл/SHA-256, CPU/GPU/RAM, ОС, backend, DPI, время и пиковая память. Первый запуск шейдеров фиксируется отдельно.
-- До утверждения эталонного оборудования на каждой ОС эти числа являются целями, а не подтверждёнными гарантиями. Изменение целей требует причины и обновления этой спецификации.
-- В покое нет постоянной перерисовки; кадры запрашиваются при вводе, изменении окна или загрузке.
-- Все основные действия доступны с клавиатуры, фокус виден, иконки имеют текстовые подписи или подсказки. Корректность кириллицы и масштабов интерфейса 100%/150%/200% проверяется вручную.
-- Стандартный размер окна — 1280×800 логических пикселей, минимальная поддерживаемая область — 800×600; если экран меньше, окно помещается в доступную рабочую область.
+Use ordinary Rust unit/integration tests for logic. GUI/GPU require separate checks. Coverage percentages do not replace these scenarios.
 
-## 9. Проверки и критерии приёмки
-
-Для логики применяются обычные Rust unit/integration tests. GUI и GPU требуют отдельных проверок. Процент покрытия не заменяет перечисленные сценарии.
-
-| ID | Проверяемый результат | Проверка |
+| ID | Required result | Verification |
 | --- | --- | --- |
-| AC-01 | Один и тот же 3MF открывается диалогом, drop и аргументом пути | Ручная проверка всех трёх ОС; Unicode/пробелы в пути |
-| AC-02 | Обычная модель сразу видна целиком, может быть осмотрена с шести сторон | UI + тесты fit/projection/resize |
-| AC-03 | Pan/zoom/orbit работают мышью, трекпадом и клавиатурой без перехвата ввода полей | Ручная проверка, включая Linux X11/Wayland |
-| AC-04 | Габариты и экземпляры совпадают с ожидаемыми для units, nested transforms и Production parts | Числовые fixtures, включая поворот, отражение и неравномерный масштаб |
-| AC-05 | Фон сразу меняется и сохраняется после перезапуска; неверный HEX и ошибка записи обработаны | Settings tests + UI |
-| AC-06 | Подтверждённые Bambu-файлы читаются; modifiers/plates и упрощения имеют явный статус | Корпус с версиями, сравнение с Bambu Studio |
-| AC-07 | Ошибочные архивы и превышение лимитов дают контролируемую ошибку, не crash | Негативные fixtures; измерение памяти на граничных примерах |
-| AC-08 | Отмена и открытие B во время A не публикуют устаревшую сцену; при ошибке B остаётся предыдущая | Детерминированные тесты загрузчика + UI |
-| AC-09 | Исходный файл не изменён и не отправлен в сеть | SHA-256 до/после, проверка поведения офлайн и отсутствия сетевой активности |
-| AC-10 | UI отзывчив, показатели производительности измерены по протоколу | Release benchmark с указанным оборудованием |
-| AC-11 | Приложение работает без установленного Bambu Studio на всех целевых архитектурах | Запуск упакованных сборок на чистых системах |
-| AC-12 | README отличает проверенные возможности от ограничений | Сверка документации с отчётом приёмки |
+| AC-01 | The same 3MF opens through picker, drop, and file argument | Manual checks on all three OS families; Unicode/spaces in paths |
+| AC-02 | A normal model is immediately fully visible and inspectable from six sides | UI plus fit/projection/resize tests |
+| AC-03 | Pan/zoom/orbit work with mouse, trackpad, and keyboard without stealing input-field keys | Manual checks, including Linux X11/Wayland |
+| AC-04 | Bounds and instances match expected units, nested transforms, and Production parts | Numeric fixtures including rotation, reflection, nonuniform scale |
+| AC-05 | Background changes immediately and survives restart; invalid HEX/write errors are handled | Settings tests plus UI |
+| AC-06 | Confirmed Bambu files import; modifiers/plates/simplifications have explicit status | Versioned corpus and Bambu Studio comparison |
+| AC-07 | Invalid archives and exceeded limits produce controlled errors, not crashes | Negative fixtures and boundary-memory measurements |
+| AC-08 | Cancel/open B during A does not publish an obsolete scene; B's failure preserves the previous scene | Deterministic loader tests plus UI |
+| AC-09 | The source file is unchanged and not uploaded | Before/after SHA-256, offline behavior, network-activity checks |
+| AC-10 | UI responsiveness and performance are measured using the protocol | Release benchmark on identified hardware |
+| AC-11 | Packages run without Bambu Studio on every target architecture | Clean-system package runs |
+| AC-12 | README distinguishes tested features from limitations | Documentation compared with acceptance evidence |
 
-Обязательные образцы: минимальная сетка; несколько объектов; повторные экземпляры; вложенные компоненты; model parts с одинаковыми локальными ID; все единицы; отрицательный determinant; пустой build; битая ссылка; цикл; некорректный индекс; `NaN`; усечённый ZIP/XML; traversal/external URI; чрезмерное сжатие, глубина и число экземпляров; неизвестные required/recommended extensions; цветная модель; несколько Bambu plates; negative volume/modifier; `.gcode.3mf` без mesh.
+Required samples: minimal mesh; multiple objects; repeated instances; nested components; model parts with identical local IDs; every unit; negative determinant; empty build; broken reference; cycle; invalid index; `NaN`; truncated ZIP/XML; traversal/external URI; excessive compression/depth/instance count; unknown required/recommended extensions; colored model; multiple Bambu plates; negative volume/modifier; `.gcode.3mf` without a mesh.
 
-Fixtures создаются синтетически либо берутся с разрешением. Для каждого внешнего файла фиксируются источник, лицензия/разрешение, версия Bambu Studio, SHA-256, ожидаемые объекты и габариты. Большие архивы генерируются тестом или хранятся отдельно по описанному способу получения. Никакой пользовательский приватный файл не публикуется автоматически.
+Create synthetic fixtures or obtain files with permission. Record external sources, license/permission, Bambu Studio version, SHA-256, expected objects, and bounds. Generate large archives in tests or keep them separately with retrieval instructions. Never publish private user models automatically.
 
-Для сравнения геометрии используются известные числовые значения; допустимая погрешность координат после импорта — `max(0,001 мм, 1e-5 × диагональ сцены)`. Визуальное сравнение служит дополнительной проверкой и не заменяет числовую.
+Use known numeric geometry values, with allowed coordinate error after import of `max(0.001 mm, 1e-5 × scene diagonal)`. Visual comparison supplements numeric checks; it does not replace them.
 
-## 10. Команды разработки
+## 10. Development commands
 
-Из корня Cargo-проекта:
+From the Cargo project root:
 
 ```bash
 cargo run --locked
@@ -320,48 +325,49 @@ cargo run --locked -- "/path/to/model.3mf"
 cargo fmt --all -- --check
 cargo clippy --locked --all-targets --all-features -- -D warnings
 cargo test --locked --all-targets --all-features
+cargo test --locked --no-default-features
 cargo build --locked --release
 ```
 
-Команды должны выполняться в нативной CI-матрице macOS/Windows/Linux. В текущей агентской среде перед ними используется `rtk`. Локальные результаты этих команд приведены в отчёте проверки. Упаковка и системные зависимости описаны в README; CI workflow создан, но удалённые прогоны ещё не выполнены.
+Run these gates in the native macOS/Windows/Linux CI matrix. The owner's local agent environment prefixes shell commands with `rtk`; hosted CI does not need it. Local evidence is recorded in the validation report. README covers packaging/system dependencies, and the GitHub Actions guide covers remote execution. Do not call a workflow tested remotely before an actual successful run.
 
-## 11. Правила изменений и готовность
+## 11. Change rules and readiness
 
-**Всегда:** сохранять исходные файлы, валидировать входные данные, поддерживать отзывчивый UI, отражать фактическую совместимость в документации, выполнять проверки по масштабу изменения.
+**Always:** preserve source files, validate input, keep the UI responsive, document actual compatibility, and run checks appropriate to the change.
 
-**Отдельное решение владельца:** изменение платформ или пользовательского контракта, добавление записи в 3MF/сетевых функций, существенная смена стека, лицензия и публичное распространение. Обычные обратимые действия в пределах уже порученной работы не требуют повторного разрешения.
+**Separate owner decision:** platform/user-contract changes, 3MF writes or networking, substantial stack replacement, licensing, and public distribution. Ordinary reversible work within an authorized task does not need repeated permission.
 
-**Никогда:** молча подменять модель картинкой, объявлять неполный импорт полным, менять исходный 3MF, исполнять содержимое архива, скрывать проваленные проверки или заявлять непроверенную поддержку ОС.
+**Never:** silently substitute a thumbnail, report incomplete import as complete, modify the source 3MF, execute archive content, conceal failed checks, or claim untested OS support.
 
-Первая версия готова после выполнения AC-01…AC-12, проверки дистрибутивов на заявленных архитектурах, фиксации известных ограничений и выбора лицензии. Текущий локальный результат и незакрытые пункты перечислены в `docs/VALIDATION.md`; реализация не выдаётся за завершённый публичный релиз всех платформ.
+The initial release is accepted after AC-01…AC-12, package checks on promised architectures, documented limitations, and license selection. `docs/VALIDATION.md` records local results and open criteria; implementation is not presented as a completed public release across all platforms.
 
-## 12. Решения, которые ещё предстоит зафиксировать
+## 12. Outstanding decisions
 
-Перед публичным выпуском остаются:
+Before public distribution:
 
-- Лицензия, подпись/notarization и проверка дистрибутивов на чистых ОС.
-- Минимальная проверенная macOS, Windows/Linux runtime, Intel Mac, X11/Wayland и trackpad/DPI.
-- Расширенный корпус современных Bambu Studio проектов: несколько пластин, цветная геометрия, modifiers и большие файлы.
-- Эталонное оборудование и полный протокол FPS/первого кадра; headless-замер не заменяет его.
-- Проверка аварийного GPU-сценария и дальнейшее автоматическое восстановление device.
+- License selection, signing/notarization, and clean-system package checks.
+- Minimum validated macOS; Windows/Linux runtime; Intel Mac; X11/Wayland; trackpad/DPI behavior.
+- A broader modern Bambu corpus covering multiple plates, colored geometry, modifiers, and large files.
+- Reference hardware and the full FPS/first-frame protocol; headless timing does not replace it.
+- GPU-failure injection and future automatic device recovery.
 
-Поручение реализовать v1 получено; код, тесты и локальная упаковка созданы. Публикация и выбор лицензии не выполнялись.
+The v1 implementation request has been fulfilled with code, tests, and local packages. License selection and public release publication have not been performed.
 
-## Изменения интерфейса 1.1
+## Interface changes in 1.1
 
-- Инспектор справа: графитовые поверхности, тонкие границы, тёплый акцент; вкладки View и Settings. Модель, размеры по осям, статистика, ракурсы, проекция, навигация и фон сгруппированы в компактные секции. Панель прокручивается при небольшой высоте окна.
-- Стрелки перемещают вид в направлении экрана без изменения ориентации. Шаг — 24 логических пикселя, Shift увеличивает его в 4 раза; Alt + стрелки вращает. Управление активно после клика в область модели; поля ввода, всплывающие меню и окна Help/About его блокируют.
-- Язык применяется немедленно, включая открытые сообщения. Отсутствие `language` в старых настройках означает English и не сбрасывает фон. Неизвестный язык также получает English. Ошибки ОС и сторонних библиотек могут сохранять исходный технический текст.
-- About показывает версию сборки, назначение приложения и кликабельную ссылку [Made in Austin ✩ Texas](https://aomega.co/) с неизменным текстом в обоих языках. Сеть используется только по явному клику пользователя на эту ссылку в системном браузере.
+- Right inspector: graphite surfaces, thin borders, warm accent, View/Settings tabs. Model, dimensions, statistics, views, projection, navigation, and background are grouped into compact sections, with scrolling at shorter window heights.
+- Arrows pan in screen direction without changing orientation: 24 logical pixels per step; Shift multiplies by four; Alt + arrows orbits. Activate with a viewport click; inputs, popups, and Help/About windows block camera keyboard input.
+- Language changes apply immediately, including existing messages. Missing/unknown language in old settings falls back to English without resetting background. OS/library errors may retain original technical text.
+- About shows version, purpose, and the exact clickable [Made in Austin ✩ Texas](https://aomega.co/) link in both languages. Only an explicit click opens the URL in the system browser.
 
-## Изменения 1.2 — меню и брендинг
+## Menu and branding changes in 1.2, updated for GitHub preparation
 
-Верхние отдельные кнопки заменены компактной строкой текстового меню `YO3MFS / File / View / Help` (русские пункты: `YO3MFS / Файл / Вид / Справка`). Используется egui MenuBar внутри окна; нативная рамка ОС сохранена. Глобальное системное меню macOS не входит в эту реализацию.
+Separate top buttons were replaced by `YO3MFS / File / View / Help`, translated through the UI dictionaries. Use an in-window egui MenuBar and retain the native OS frame; a global macOS menu bar is outside this implementation.
 
-- YO3MFS: About, Settings (`⌘,` / `Ctrl+,`), выход (`⌘Q` / `Ctrl+Q`).
-- File: Open (`⌘O` / `Ctrl+O`), закрытие окна (`⌘W` / `Ctrl+W`).
-- View: Fit all, Reset view, Zoom in/out, Orientation, Projection. Команды камеры недоступны без сцены; выбранные ракурс и проекция отмечены.
-- Help: Controls (`F1`), About. Открытое меню не передаёт стрелки в камеру.
-- Рядом с командами отображаются сочетания клавиш в обозначениях текущей ОС.
+- YO3MFS: About, Settings (`⌘,` / `Ctrl+,`), Quit (`⌘Q` / `Ctrl+Q`). This is the only About menu location.
+- File: Open (`⌘O` / `Ctrl+O`), Close window (`⌘W` / `Ctrl+W`).
+- View: Fit all, Reset view, Zoom in/out, Orientation, Projection. Disable camera commands without a scene; mark selected orientation/projection.
+- Help: Controls (`F1`). Remove the duplicate About entry. Open menus do not pass arrows to the camera.
+- Show shortcuts in the current OS notation.
 
-Логотип и иконка утверждены владельцем 16 октября 2026 года. Обзорный макет сохранён в `assets/branding/concepts/`, рабочие файлы и промпты — в `assets/branding/`. Медная Y на графитовом кубе используется в пустом окне и в иконке приложения; светлый логотип — в About. Графика встроена в бинарник и не требует сети или файлов рядом с приложением. Иконки ОС: macOS ICNS в bundle, Windows ICO в ресурсе EXE, Linux PNG и desktop entry с совпадающим app_id `com.yo3mfs.viewer`. Linux desktop entry устанавливается пользователем отдельно; системные ассоциации 3MF не меняются.
+The owner approved the logo/icon on October 16, 2026. Keep the concept in `assets/branding/concepts/` and production assets/prompts in `assets/branding/`. The copper Y on a graphite cube appears in the empty window and application icon; the light wordmark appears in About. Graphics are embedded and do not require network access or sidecar files. OS icons: macOS ICNS in the bundle, Windows ICO in the EXE resource, Linux PNG/desktop entry with app ID `com.yo3mfs.viewer`. Linux launcher installation is separate; 3MF associations remain unchanged.

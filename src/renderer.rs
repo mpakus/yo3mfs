@@ -8,6 +8,7 @@ pub struct Renderer {
     pipeline: wgpu::RenderPipeline,
     uniform: wgpu::Buffer,
     bind: wgpu::BindGroup,
+    target_srgb: bool,
 }
 struct GpuMesh {
     vertices: wgpu::Buffer,
@@ -37,8 +38,8 @@ impl Renderer {
         let pipeline=device.create_render_pipeline(&wgpu::RenderPipelineDescriptor{
             label:Some("yo3mfs geometry"),layout:None,
             vertex:wgpu::VertexState{module:&shader,entry_point:Some("vs_main"),compilation_options:Default::default(),buffers:&[
-                Some(wgpu::VertexBufferLayout{array_stride:12,step_mode:wgpu::VertexStepMode::Vertex,attributes:&wgpu::vertex_attr_array![0=>Float32x3]}),
-                Some(wgpu::VertexBufferLayout{array_stride:64,step_mode:wgpu::VertexStepMode::Instance,attributes:&wgpu::vertex_attr_array![1=>Float32x4,2=>Float32x4,3=>Float32x4,4=>Float32x4]}),
+                Some(wgpu::VertexBufferLayout{array_stride:16,step_mode:wgpu::VertexStepMode::Vertex,attributes:&wgpu::vertex_attr_array![0=>Float32x3,6=>Uint32]}),
+                Some(wgpu::VertexBufferLayout{array_stride:68,step_mode:wgpu::VertexStepMode::Instance,attributes:&wgpu::vertex_attr_array![1=>Float32x4,2=>Float32x4,3=>Float32x4,4=>Float32x4,5=>Uint32]}),
             ]},
             primitive:wgpu::PrimitiveState{cull_mode:None,..Default::default()},
             depth_stencil:Some(wgpu::DepthStencilState{format:wgpu::TextureFormat::Depth32Float,depth_write_enabled:Some(true),depth_compare:Some(wgpu::CompareFunction::Less),stencil:Default::default(),bias:Default::default()}),
@@ -48,7 +49,7 @@ impl Renderer {
         });
         let uniform = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("camera"),
-            contents: bytemuck::cast_slice(&glam::Mat4::IDENTITY.to_cols_array()),
+            contents: bytemuck::cast_slice(&[0.0_f32; 20]),
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
         });
         let bind = device.create_bind_group(&wgpu::BindGroupDescriptor {
@@ -66,6 +67,7 @@ impl Renderer {
             pipeline,
             uniform,
             bind,
+            target_srgb: state.target_format.is_srgb(),
         }))
     }
     pub fn upload(device: &wgpu::Device, prepared: &Prepared) -> Result<Arc<GpuScene>, Message> {
@@ -73,18 +75,32 @@ impl Renderer {
         if prepared.gpu_bytes as u64 > 2 * 1024 * 1024 * 1024 {
             return Err(Key::GpuMemory.into());
         }
-        for (mesh, vertices) in prepared.scene.meshes.iter().zip(&prepared.vertices) {
-            if (vertices.len() * 12) as u64 > limit || (mesh.triangles.len() * 12) as u64 > limit {
+        for (n, (mesh, vertices)) in prepared
+            .scene
+            .meshes
+            .iter()
+            .zip(&prepared.vertices)
+            .enumerate()
+        {
+            let indices = prepared.indices[n].as_ref().unwrap_or(&mesh.triangles);
+            if (vertices.len() * 16) as u64 > limit || (indices.len() * 12) as u64 > limit {
                 return Err(Key::GpuBuffer.into());
             }
         }
-        if (prepared.instances.len() * 64) as u64 > limit {
+        if (prepared.instances.len() * 68) as u64 > limit {
             return Err(Key::GpuInstances.into());
         }
         let oom = device.push_error_scope(wgpu::ErrorFilter::OutOfMemory);
         let validation = device.push_error_scope(wgpu::ErrorFilter::Validation);
         let mut meshes = Vec::new();
-        for (mesh, vertices) in prepared.scene.meshes.iter().zip(&prepared.vertices) {
+        for (n, (mesh, vertices)) in prepared
+            .scene
+            .meshes
+            .iter()
+            .zip(&prepared.vertices)
+            .enumerate()
+        {
+            let indices = prepared.indices[n].as_ref().unwrap_or(&mesh.triangles);
             meshes.push(GpuMesh {
                 vertices: device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
                     label: Some("mesh vertices"),
@@ -93,16 +109,19 @@ impl Renderer {
                 }),
                 indices: device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
                     label: Some("mesh indices"),
-                    contents: bytemuck::cast_slice(&mesh.triangles),
+                    contents: bytemuck::cast_slice(indices),
                     usage: wgpu::BufferUsages::INDEX,
                 }),
-                count: mesh.triangles.len() as u32 * 3,
+                count: indices.len() as u32 * 3,
             });
         }
         let matrices = prepared
             .instances
             .iter()
-            .map(|i| i.matrix)
+            .map(|i| GpuInstance {
+                matrix: i.matrix,
+                color: i.color,
+            })
             .collect::<Vec<_>>();
         let instances = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("instances"),
@@ -142,6 +161,7 @@ impl Renderer {
         scene: Arc<GpuScene>,
         matrix: glam::Mat4,
         plate: Option<u32>,
+        project_colors: bool,
     ) -> egui::PaintCallback {
         egui_wgpu::Callback::new_paint_callback(
             rect,
@@ -150,14 +170,22 @@ impl Renderer {
                 scene,
                 matrix: matrix.to_cols_array(),
                 plate,
+                project_colors,
             },
         )
     }
+}
+#[repr(C)]
+#[derive(Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
+struct GpuInstance {
+    matrix: [[f32; 4]; 4],
+    color: u32,
 }
 struct Paint {
     renderer: Arc<Renderer>,
     scene: Arc<GpuScene>,
     matrix: [f32; 16],
+    project_colors: bool,
     plate: Option<u32>,
 }
 impl egui_wgpu::CallbackTrait for Paint {
@@ -169,11 +197,11 @@ impl egui_wgpu::CallbackTrait for Paint {
         _encoder: &mut wgpu::CommandEncoder,
         _resources: &mut egui_wgpu::CallbackResources,
     ) -> Vec<wgpu::CommandBuffer> {
-        queue.write_buffer(
-            &self.renderer.uniform,
-            0,
-            bytemuck::cast_slice(&self.matrix),
-        );
+        let mut uniform = [0.0_f32; 20];
+        uniform[..16].copy_from_slice(&self.matrix);
+        uniform[16] = f32::from(self.project_colors);
+        uniform[17] = f32::from(!self.renderer.target_srgb);
+        queue.write_buffer(&self.renderer.uniform, 0, bytemuck::cast_slice(&uniform));
         vec![]
     }
     fn paint(

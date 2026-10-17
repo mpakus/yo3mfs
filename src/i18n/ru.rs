@@ -2,6 +2,26 @@ use super::Key;
 
 pub(super) const fn get(key: Key) -> &'static str {
     match key {
+        Key::BadPaint => "Некорректная раскраска грани Bambu",
+        Key::PaintDepth => "глубина разбиения раскраски",
+        Key::ProjectSettingsSize => "размер настроек цветов проекта",
+        Key::PaletteWarning => {
+            "Некоторые цвета филаментов отсутствуют или некорректны. Эти участки показаны цветом детали или нейтральным материалом."
+        }
+        Key::PaintWarning => {
+            "Раскраска некоторых граней не прочитана. Эти грани показаны цветом детали."
+        }
+        Key::FilamentEffectsWarning => "Эффекты многоцветного филамента показаны основным цветом.",
+        Key::Materials => "МАТЕРИАЛЫ",
+        Key::ProjectColors => "Цвета проекта",
+        Key::NeutralMaterial => "Нейтральный",
+        Key::Filaments => "Филаменты проекта",
+        Key::NoProjectColors => "Палитры проекта нет. Используется нейтральный материал.",
+        Key::UnknownColor => "Недоступен",
+        Key::ColorPreviewHint => {
+            "Просмотр сохранённых цветов проекта. Настройки печати и физические слоты AMS не моделируются."
+        }
+
         Key::HelpMenu => "Справка",
         Key::Preferences => "Настройки…",
         Key::AboutApp => "О приложении YO3MFS",
@@ -121,7 +141,7 @@ pub(super) const fn get(key: Key) -> &'static str {
         }
         Key::RawDetail => "{0}",
         Key::VisualWarning => {
-            "Упрощённое отображение: исходные цвета, текстуры и необязательные расширения не применяются."
+            "Материалы Core, текстуры и другие необязательные визуальные расширения не применяются."
         }
         Key::DegenerateWarning => "Пропущено вырожденных треугольников: {0}",
         Key::ExcludedWarning => {
@@ -131,7 +151,7 @@ pub(super) const fn get(key: Key) -> &'static str {
             "Не удалось однозначно определить пластины; показаны все объекты в исходных координатах."
         }
         Key::UnknownRole => "Неизвестная роль части: показана исходная геометрия.",
-        Key::BambuWarning => "Bambu Studio: настройки печати и исходные цвета не применяются.",
+        Key::BambuWarning => "Bambu Studio: настройки печати не моделируются.",
         Key::GeometryMemory => "память геометрии",
         Key::ExpectedCore => "Ожидалась Core 3MF модель",
         Key::DuplicateResources => "Повтор resources",

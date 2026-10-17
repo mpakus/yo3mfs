@@ -1,29 +1,29 @@
-# Инструкции для агентов
+# Instructions for agents
 
 @/Users/mpak/.codex/RTK.md
 
-## Контекст
+## Context
 
-`yo3mfs` — офлайн-просмотрщик 3MF на Rust для macOS, Linux и Windows, ориентированный на проекты Bambu Studio. Основной сценарий: открыть или перетащить файл, осмотреть геометрию со всех сторон, изменить масштаб и фон.
+`yo3mfs` is an offline Rust 3MF viewer for macOS, Linux, and Windows, focused on Bambu Studio projects. The main workflow is to open or drop a file, inspect its geometry from every side, zoom, and change the background.
 
-Версия 1.2.0 реализована; результаты локальной проверки и оставшиеся платформенные проверки записаны в `docs/VALIDATION.md`. Не объявляйте неподтверждённую совместимость проверенной. Перед работой прочитайте [SPEC.md](SPEC.md) и [README.md](README.md), затем проверьте фактическое содержимое и состояние Git.
+Version 1.3.0 is implemented. Local evidence and outstanding platform checks are recorded in `docs/VALIDATION.md`. Do not present unverified compatibility as tested. Before working, read [SPEC.md](SPEC.md) and [README.md](README.md), then inspect the actual files and Git state.
 
-## Приоритеты и границы работы
+## Priorities and scope
 
-- Текущее явное поручение пользователя задаёт объём работы. Запрос документации сам по себе не означает поручение реализовать приложение.
-- `SPEC.md` — продуктовый и технический контракт. Изменения требований отражайте в нём в той же работе.
-- Не добавляйте слайсер, редактор геометрии, управление принтером, облако, авторизацию или телеметрию без отдельного запроса.
-- Выполняйте уже порученную работу без повторного запроса разрешения на обычные обратимые действия.
-- Сохраняйте чужие изменения. Не применяйте разрушительные Git-команды и не переписывайте историю без явного поручения.
-- Не создавайте коммиты, релизы и публикации только потому, что документация упоминает их как будущие этапы.
+- The user's current explicit request defines the work. A request for documentation alone does not authorize implementing the application.
+- `SPEC.md` is the product and technical contract. Update it in the same change when requirements change.
+- Do not add slicing, geometry editing, printer control, cloud services, authentication, or telemetry without a separate request.
+- Complete authorized work without asking again about ordinary reversible actions.
+- Preserve other work. Do not use destructive Git commands or rewrite history without an explicit request.
+- Do not create commits, releases, or publications merely because documentation lists them as future steps.
 
-## Команды и инструменты
+## Commands and tools
 
-В текущей среде прочитайте `/Users/mpak/.codex/RTK.md` и выполняйте shell-команды через `rtk`. Для команды без специализированной обёртки используйте `rtk proxy <команда>`. Этот путь относится к локальной среде владельца, а не к зависимостям приложения. Если файла или RTK нет в другой среде, явно сообщите об этом и используйте доступные стандартные инструменты.
+In the owner's environment, read `/Users/mpak/.codex/RTK.md` and prefix shell commands with `rtk`. Use `rtk proxy <command>` when there is no specialized wrapper. This path is local tooling guidance, not an application dependency. If the file or RTK is unavailable elsewhere, report that and use standard tools. GitHub-hosted CI uses standard commands without RTK.
 
-Для поиска сначала используйте `rg` / `rg --files` через RTK. Для документационных изменений проверяйте ссылки, согласованность и diff.
+Use `rg` / `rg --files` through RTK first for searches. For documentation changes, check links, consistency, and the diff.
 
-Стандартный набор проверок:
+Standard checks:
 
 ```bash
 rtk cargo fmt --all -- --check
@@ -32,54 +32,64 @@ rtk cargo test --locked --all-targets --all-features
 rtk cargo build --locked --release
 ```
 
-Запуск: `rtk cargo run --locked`. Проверка открытия через аргумент: `rtk cargo run --locked -- "/path/to/model.3mf"`.
+Run with `rtk cargo run --locked`. Check a file argument with `rtk cargo run --locked -- "/path/to/model.3mf"`.
 
-## Архитектура и Rust
+## Architecture and Rust
 
-- Принятый стек: `egui/eframe` + `wgpu`; не вводите WebView, JavaScript-фронтенд или игровой движок без обоснованного изменения спецификации.
-- Проект использует один Cargo-пакет с библиотекой и бинарным входом. Не разделяйте проект на множество crates заранее.
-- Используйте Rust edition 2024. Проверенный toolchain и заявленный MSRV — 1.97.1; сохраняйте `rust-toolchain.toml` и `Cargo.lock`. Более ранний MSRV не проверен.
-- Отделяйте `import`, `scene`, `camera`, `renderer`, `settings` и `app`. Импорт, модель сцены и математика камеры должны тестироваться без окна и GPU.
-- `eframe`, `egui-wgpu` и используемый `wgpu` должны иметь совместимые версии. Не создавайте второй графический device ради области просмотра.
-- ZIP/XML и подготовка геометрии выполняются вне UI-потока. Не создавайте неограниченную очередь потоков, копий сцены или GPU-буферов.
-- Результаты загрузок маркируйте идентификатором запроса: завершение устаревшей загрузки не должно заменить последний выбранный файл.
-- Входные ошибки возвращайте через `Result`; используйте типизированные ошибки и отдельные предупреждения. Не допускайте `unwrap` / `expect` на данных файла или ответах ОС.
-- В собственном коде по умолчанию запретите `unsafe` через `#![forbid(unsafe_code)]`. Зависимости оцениваются отдельно.
-- Имена типов и функций — английские, стиль — `rustfmt`. Комментарии объясняют причины, единицы, системы координат и порядок преобразований.
-- Документацию ведите по-русски; интерфейс по умолчанию — английский, переключение на русский доступно в Settings.
-- Поддерживайте **оба словаря** `src/i18n/en.rs` и `src/i18n/ru.rs` в одном изменении. Все подписи, подсказки, сообщения приложения, ошибки и предупреждения должны использовать типизированный `Key`; не добавляйте пользовательские строки непосредственно в UI или importer. Допустимы бренд, обозначения осей, имена языков, форматные символы и неизменённые технические сообщения ОС/библиотек.
-- Новые ключи добавляйте в `Key` и `Key::ALL`; переводы должны иметь одинаковые параметры. Оба словаря исчерпывающие: отсутствие перевода должно ломать сборку. Проверяйте паритет параметров и читаемость русских строк.
-- Язык сохраняется в settings.json как `en` / `ru`. Старые настройки без языка сохраняют фон и получают English. Переключение применяется сразу, в том числе к уже показанным ошибкам и предупреждениям.
-- Стрелки при фокусе viewport перемещают вид в плоскости экрана, Shift ускоряет, Alt + стрелки вращает. Поля ввода, меню и диалоги не должны передавать эти клавиши камере.
-- Верхнее меню — egui MenuBar с текстовыми пунктами YO3MFS / File / View / Help. Не возвращайте ряд крупных кнопок и не называйте это глобальным нативным меню macOS.
-- Логотип и иконка утверждены владельцем 16 октября 2026 года. Используйте файлы из `assets/branding/`, сохраняя медную Y и геометрию куба. Исходный обзорный макет и промпты сохранены; не заменяйте утверждённую графику новым дизайном без запроса. `scripts/build_icons.py` пересоздаёт размеры PNG, ICNS и ICO на macOS; готовые файлы входят в проект. Проверяйте иконку окна, macOS bundle resource, Windows EXE resource и Linux desktop entry с app_id `com.yo3mfs.viewer`.
-- About содержит точную ссылку `Made in Austin ✩ Texas` → `https://aomega.co/` в обоих языках.
+- The chosen stack is `egui/eframe` + `wgpu`. Do not introduce a WebView, JavaScript frontend, or game engine without a justified specification change.
+- Use one Cargo package with library modules and a binary entry point. Do not split it into many crates prematurely.
+- Use Rust edition 2024. The tested toolchain and declared MSRV are 1.97.1; retain `rust-toolchain.toml` and `Cargo.lock`. Earlier MSRVs are untested.
+- Separate `import`, `scene`, `camera`, `renderer`, `settings`, and `app`. Import, scene data, and camera mathematics must be testable without a window or GPU.
+- Keep `eframe`, `egui-wgpu`, and `wgpu` compatible. Do not create a second graphics device for the viewport.
+- Run ZIP/XML import and geometry preparation outside the UI thread. Do not create unbounded worker queues, scene copies, or GPU buffers.
+- Tag load results with request IDs: an outdated load must not replace the most recently selected file.
+- Return input failures through `Result`, with typed errors and separate warnings. Do not use `unwrap` / `expect` on file data or OS responses.
+- Forbid `unsafe` in project code by default using `#![forbid(unsafe_code)]`. Assess dependencies separately.
+- Use English identifiers and `rustfmt`. Comments should explain reasons, units, coordinate systems, and transform order.
+- **Write and maintain all project documentation in English.** This includes README, SPEC, AGENTS, validation reports, task documents, and asset documentation. The interface defaults to English; Russian remains selectable in Settings.
+- Update **both dictionaries**, `src/i18n/en.rs` and `src/i18n/ru.rs`, in the same change. All UI labels, hints, application messages, errors, and warnings must use typed `Key` values. Do not add user-facing strings directly in UI or importer code. Exceptions: branding, axis names, language names, formatting symbols, and unchanged technical OS/library messages.
+- Add keys to both `Key` and `Key::ALL`; translations must use matching placeholders. Both dictionaries are exhaustive, so a missing translation must fail compilation. Check placeholder parity and readable Russian wording.
+- Language is stored as `en` / `ru` in `settings.json`. Old settings without a language retain the background and receive English. Switching applies immediately, including to existing errors and warnings.
+- Arrow keys pan in screen space when the viewport has focus; Shift accelerates, Alt + arrows orbits. Inputs, menus, and dialogs must not pass these keys to the camera.
+- Keep the top bar as an egui MenuBar with YO3MFS / File / View / Help. Do not restore large top buttons or call it a global native macOS menu. **About belongs only in YO3MFS; Help contains Controls.**
+- The owner approved the logo and icon on October 16, 2026. Use `assets/branding/`, preserving the copper Y and cube geometry. Keep the original concept and prompts; do not redesign approved graphics without a request. `scripts/build_icons.py` regenerates PNG sizes, ICNS, and ICO on macOS; generated assets are committed. Verify window icons, macOS bundle resources, Windows EXE resources, and the Linux desktop entry with app ID `com.yo3mfs.viewer`.
+- About contains the exact link `Made in Austin ✩ Texas` → `https://aomega.co/` in both languages.
 
-## Контракт импорта
+## Import contract
 
-- Содержимое 3MF недоверенное. Проверяйте лимиты во время чтения, а не только по ZIP-заголовкам.
-- Не распаковывайте архив в произвольную директорию и не обращайтесь по внешним ссылкам из файла. Отключайте DTD и внешние XML-сущности.
-- Находите корневую модель через OPC relationships. Не ограничивайтесь жёстко заданным `3D/3dmodel.model`.
-- Разрешайте object ID в контексте model part; поддерживайте экземпляры, вложенные компоненты и ссылки Production Extension в рамках заявленного профиля.
-- Сохраняйте геометрию, единицы и преобразования. Не переставляйте объекты на печатную платформу и не исправляйте модель молча.
-- Неизвестное обязательное расширение означает отказ с объяснением. Упрощённое отображение поддерживаемой геометрии с потерей необязательных визуальных данных должно иметь видимое предупреждение.
-- Bambu-специфику держите в отдельном адаптере. Каждый новый вариант подтверждайте файлом с известным происхождением и версией экспортировавшего приложения.
-- Не копируйте код Bambu Studio без отдельной оценки лицензии. Изучение формата не означает разрешение переносить реализацию в проект.
-- Никогда не перезаписывайте исходный 3MF и не отправляйте его содержимое в сеть.
+- Treat 3MF content as untrusted. Enforce limits while reading, not only against ZIP headers.
+- Do not extract archives to arbitrary directories or follow external file references. Disable DTDs and external XML entities.
+- Discover the root model through OPC relationships; do not assume `3D/3dmodel.model`.
+- Resolve object IDs within their model part. Support instances, nested components, and Production Extension links within the documented profile.
+- Preserve geometry, units, and transforms. Do not rearrange objects on a print bed or silently repair a model.
+- Reject unknown required extensions with an explanation. Simplified rendering that loses optional visual data must show a persistent warning.
+- Keep Bambu-specific logic in a separate adapter. Verify each new format variant with a file of known provenance and exporter version.
+- Do not copy Bambu Studio code without a separate license assessment. Studying a format does not authorize copying its implementation.
+- Palette, inheritance, and `paint_color` are described in `docs/BAMBU-COLORS.md`. Preserve facet → part → object precedence and local IDs in external model parts. Keep original geometry/statistics separate from GPU subdivisions. Instance colors must not duplicate shared meshes.
+- Check new painting variants with exact coordinates/area and real files, not screenshots alone. Include subdivisions and instances in memory/triangle budgets. Invalid optional paint falls back with a warning. Retain Project colors / Neutral and migration of old settings.
+- Never overwrite the source 3MF or transmit its contents over the network.
 
-## Проверки и завершение работы
+## Verification and completion
 
-- Core-проверка без GUI: `rtk cargo test --locked --no-default-features`. Упаковка: `rtk proxy python3 scripts/package.py --dmg` на macOS, без `--dmg` на остальных ОС.
-- Внешние эталоны: `scripts/check_reference_models.py --download`; только pinned URL/SHA из `tests/fixtures/external.json`, хранение в игнорируемом `target/`. Не переносите их в дистрибутив без проверки прав.
-- Для импорта проверяйте синтетические минимальные архивы и реальные разрешённые к использованию Bambu-файлы; фиксируйте происхождение и SHA-256 образцов.
-- Геометрию проверяйте по числу экземпляров, координатам и габаритам, а не только по скриншоту.
-- Отдельно проверяйте ошибочный архив, циклические ссылки, превышение лимитов, отмену и гонку последовательных открытий.
-- GUI проверяйте на macOS, Windows и Linux; для Linux различайте X11 и Wayland. Сборка в CI не заменяет ручную проверку диалога, drag-and-drop и GPU.
-- Состояния загрузки, ошибки и потеря GPU не должны приводить к потере последней успешно открытой сцены без объяснения.
-- Для изменения только документации достаточно проверки ссылок, согласованности требований и diff; Rust-тесты не нужны.
-- Не удаляйте failing tests, не снижайте лимиты качества и не объявляйте платформу проверенной ради зелёного отчёта.
-- В завершении укажите изменённое поведение, выполненные проверки и реальные ограничения. Различайте написанный код, прошедшие тесты, ручные проверки и готовность дистрибутива.
+- Core checks without GUI: `rtk cargo test --locked --no-default-features`. Package with `rtk proxy python3 scripts/package.py --dmg` on macOS, without `--dmg` on other platforms. Python 3.11+ is required.
+- External references: `scripts/check_reference_models.py --download`, using only pinned URLs/hashes from `tests/fixtures/external.json`, stored in ignored `target/`. Do not redistribute them without checking rights.
+- Check import with minimal synthetic archives and real Bambu files that can be used for testing; record provenance and SHA-256.
+- Verify geometry through instance counts, coordinates, and dimensions, not screenshots alone.
+- Separately test invalid archives, cycles, limits, cancellation, and competing open requests.
+- Test GUI behavior on macOS, Windows, and Linux; distinguish Linux X11 from Wayland. CI builds do not replace manual dialog, drag-and-drop, or GPU checks.
+- Loading, errors, and GPU loss must not silently discard the last successfully loaded scene.
+- Documentation-only changes require link, consistency, and diff checks; Rust tests are unnecessary for those changes alone.
+- Do not remove failing tests, lower quality limits, or claim platform acceptance just to make a report green.
+- Report behavior changes, completed verification, and actual limitations. Distinguish implemented code, passing tests, manual checks, and distribution readiness.
 
-## Когда требуется отдельное решение
+## GitHub builds
 
-Продолжайте обычную реализацию в пределах порученной задачи. Согласование нужно при изменении пользовательского контракта: запись в 3MF, отправка данных в сеть, существенная смена стека или отказ от заявленной платформы. Выбор лицензии и публичная публикация также требуют решения владельца. Сначала подготовьте конкретный вариант и объясните причину решения.
+- `.github/workflows/ci.yml` must retain four native targets: macOS ARM64, macOS x64, Windows x64, and Linux x64. Do not replace Intel Mac with another Apple Silicon build.
+- Read the Rust version from `rust-toolchain.toml` and build with `Cargo.lock`. Pin actions to verified commit SHAs, with release-version comments.
+- Keep formatting, Clippy, desktop/core tests, release builds, CLI smoke checks, and package verification before artifact upload. Each archive includes a SHA-256 checksum.
+- CI has read-only repository permissions and uploads workflow artifacts. Do not add automatic release publication, signing credentials, or private-model downloads without authorization.
+- Keep workflow behavior and artifact names synchronized with `docs/GITHUB-ACTIONS.md`. Report local validation separately from actual GitHub runs and native GUI acceptance.
+
+## Decisions that need separate authorization
+
+Continue ordinary implementation within the user's request. A separate decision is needed to change the user contract: write to 3MF, transmit data, substantially replace the stack, or drop a promised platform. License selection and public publication also require the owner's decision. Prepare a concrete proposal and explain why that decision is needed.

@@ -208,10 +208,65 @@ impl<'a, R: Read + Seek> Package<'a, R> {
                 parser.event(tag, path, end)
             })?;
         }
+        let mut metadata = parser.finish();
         if self.names.contains_key("Metadata/project_settings.config") {
             warnings.push(Key::BambuWarning.into());
+            let data = self.project_json(budget)?;
+            match bambu::project_colors(&data, &mut metadata) {
+                Ok(true) => warnings.push(Key::FilamentEffectsWarning.into()),
+                Ok(false) => {}
+                Err(_) => metadata.color_warning = true,
+            }
         }
-        Ok(parser.finish())
+        if metadata.color_warning {
+            warnings.push(Key::PaletteWarning.into());
+        }
+        Ok(metadata)
+    }
+
+    fn project_json(&mut self, budget: &mut model::Budget) -> Result<Vec<u8>, ImportError> {
+        let index = self.names["Metadata/project_settings.config"];
+        let f = self.zip.by_index(index)?;
+        let max = (8 * 1024 * 1024)
+            .min(self.limits.xml_bytes)
+            .min(self.limits.expanded_bytes.saturating_sub(self.expanded));
+        if f.size() > max {
+            return Err(ImportError::Limit(Key::ProjectSettingsSize));
+        }
+        // Covers the read buffer, bounded vectors and JSON parser bookkeeping.
+        budget.charge(32768, self.limits)?;
+        let mut reader = Bounded {
+            inner: f,
+            read: 0,
+            max,
+            cancel: self.cancel,
+            exceeded: false,
+        };
+        let mut data = Vec::new();
+        let mut chunk = [0u8; 8192];
+        loop {
+            let n = match reader.read(&mut chunk) {
+                Ok(n) => n,
+                Err(_) if reader.exceeded => {
+                    return Err(ImportError::Limit(Key::ProjectSettingsSize));
+                }
+                Err(e) => {
+                    check_cancel(self.cancel)?;
+                    return Err(e.into());
+                }
+            };
+            if n == 0 {
+                break;
+            }
+            // Includes vector capacity growth and the decoded retained strings.
+            budget.charge(n * 4, self.limits)?;
+            data.try_reserve(n)
+                .map_err(|_| ImportError::Limit(Key::GeometryMemory))?;
+            data.extend_from_slice(&chunk[..n]);
+        }
+        self.expanded += reader.read;
+        check_cancel(self.cancel)?;
+        Ok(data)
     }
 }
 struct Bounded<'a, R> {

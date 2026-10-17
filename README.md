@@ -2,69 +2,89 @@
 
 # YO3MFS
 
-Десктопный просмотрщик 3MF на Rust для **macOS, Linux и Windows**, ориентированный на проекты Bambu Studio.
+An offline desktop 3MF viewer written in Rust for **macOS, Windows, and Linux**, with support for Bambu Studio project colors and painted faces.
 
-**Версия 1.2.0: текстовое меню и утверждённый брендинг.** Локальная release-сборка проверена на Apple Silicon / macOS 27. Для Intel Mac также выполнена cross-сборка с линковкой; для Windows/Linux — cross-target `cargo check`. Настроена CI-матрица, но её удалённые прогоны и ручная проверка этих платформ ещё не выполнены. Подробные результаты и оставшиеся проверки — в [docs/VALIDATION.md](docs/VALIDATION.md).
+Open a file, inspect it from any angle, and choose a comfortable background. YO3MFS preserves the original file and does not require Bambu Studio, a printer connection, or an account.
 
-## Запуск
+![YO3MFS displaying a black and orange 3MF phone case with project colors and the scene inspector](screenshot.png)
 
-На этом Mac готовое приложение находится в `dist/1.2.0-macos-arm64/yo3mfs.app`, образ — в `dist/1.2.0-macos-arm64/yo3mfs-1.2.0-arm64.dmg`. Откройте `.app` и выберите 3MF либо перетащите файл в окно. Это локальная сборка с ad-hoc подписью, без Developer ID и notarization; публичный релиз ещё не опубликован.
+**Current version: 1.3.0.** The application has been tested locally on Apple Silicon with macOS 27. Intel Mac builds have been cross-compiled and linked; Windows and Linux have passed cross-target Rust checks. Native GitHub builds are configured for all four targets. A successful build is separate from manual GUI acceptance; see [validation results and remaining checks](docs/VALIDATION.md).
 
-Intel Mac: пакет 1.2.0 находится в `dist/1.2.0-macos-x86_64/`; запуск на Intel ещё не проверен.
+## Download and run
 
-Из исходников, с установленными Rust/rustup и инструментами сборки ОС:
+GitHub Actions builds these packages on pushes, pull requests, and manual runs:
+
+| Platform | Architecture | Package | Actions artifact |
+| --- | --- | --- | --- |
+| macOS | Apple Silicon / ARM64 | `.dmg` containing `.app` | `yo3mfs-macos-arm64` |
+| macOS | Intel / x64 | `.dmg` containing `.app` | `yo3mfs-macos-x64` |
+| Windows | x64 | Portable `.zip` containing `.exe` | `yo3mfs-windows-x64` |
+| Linux | x64, built on Ubuntu 24.04 | Portable `.tar.gz` | `yo3mfs-linux-x64` |
+
+Open [Actions](https://github.com/mpakus/yo3mfs/actions/workflows/ci.yml), select a successful **Desktop checks and packages** run, and download the artifact for your platform. Each artifact contains a package and `SHA256SUMS`. Artifacts are retained for 14 days. The workflow produces build artifacts; it does not publish GitHub Releases automatically. The repository has no completed remote runs yet as of the local verification recorded in [VALIDATION.md](docs/VALIDATION.md).
+
+On macOS, open the DMG and copy `yo3mfs.app` to Applications. On Windows, extract the ZIP and run `yo3mfs.exe`. On Linux, extract the archive and run `./yo3mfs`. Packages are not signed for public distribution: macOS uses an ad-hoc signature without Developer ID/notarization; Windows Authenticode signing is not configured. Linux archives do not bundle system libraries.
+
+Local macOS packages from the color implementation are in `dist/1.3.0-macos-arm64/` and `dist/1.3.0-macos-x86_64/`. The updated menu and GitHub packaging checks use separate directories recorded in [VALIDATION.md](docs/VALIDATION.md). `dist/` is excluded from Git.
+
+To run from source, install Rust/rustup and your platform's build tools:
 
 ```bash
 cargo run --locked --release
 cargo run --locked --release -- "/path/to/model.3mf"
 ```
 
-Rust **1.97.1** закреплён в `rust-toolchain.toml`; edition 2024. Для быстрой проверки используйте собственный образец `tests/fixtures/sample.3mf`.
+Rust **1.97.1** is pinned in `rust-toolchain.toml`; the project uses edition 2024. Use the project's own `tests/fixtures/sample.3mf` for a quick check.
 
-## Возможности
+## Features
 
-- Текстовая строка меню YO3MFS / File / View / Help с привычными командами и подсказками горячих клавиш.
-- Системный диалог, drag-and-drop одного файла и путь в аргументе запуска.
-- GPU-просмотр сетки, нескольких объектов, экземпляров и вложенных компонентов.
-- Вращение на 360°, масштабирование, перемещение, семь стандартных видов.
-- Перспективная и ортографическая проекции, вписывание всей сцены.
-- Палитра, HEX и пресеты фона с сохранением между запусками.
-- Английский интерфейс по умолчанию; **Settings → Русский** переключает язык сразу и сохраняет выбор.
-- Графитовый инспектор с секциями модели, камеры и оформления, вкладкой настроек.
-- About со ссылкой [Made in Austin ✩ Texas](https://aomega.co/).
-- Габариты X/Y/Z в миллиметрах, число экземпляров и треугольников.
-- Фоновая загрузка со стадиями и отменой; ошибка нового файла сохраняет предыдущую сцену.
-- Core 3MF, внешние Production parts и базовые роли/пластины Bambu.
+- A compact text menu: YO3MFS / File / View / Help, with keyboard shortcuts.
+- A system file picker, single-file drag-and-drop, and a command-line file argument.
+- GPU rendering of meshes, multiple objects, shared instances, and nested components.
+- Bambu filament colors, object/part assignments, and paint boundaries inside triangles.
+- Materials → Project colors / Neutral, a numbered project palette, and a saved display mode.
+- Full rotation, zoom, pan, and seven standard views.
+- Perspective and orthographic projections, and Fit all.
+- A background color picker, HEX input, and saved presets.
+- English by default; the Russian option in Settings applies immediately and is saved.
+- A graphite inspector with Model, Materials, Camera, Appearance, and Settings sections.
+- YO3MFS → About, including [Made in Austin ✩ Texas](https://aomega.co/). Help contains Controls only.
+- X/Y/Z dimensions in millimeters, instance counts, and original triangle counts.
+- Background loading with stages and cancellation; a failed new load preserves the previous scene.
+- Core 3MF, external Production parts, and basic Bambu part roles and plate selection.
 
-Приложение работает локально, не меняет 3MF и не отправляет его в сеть. Слайсера, печати, редактора и экспорта нет. Основной код — Rust, шейдер — WGSL; WebView и JavaScript-фронтенд не используются.
+The viewer works locally and never edits or uploads a 3MF. It does not slice, print, edit geometry, or export models. The application is written in Rust with a WGSL shader; it has no WebView or JavaScript frontend.
 
-## Совместимость
+## Compatibility
 
-Поддержаны геометрические mesh, build instances, component transforms, шесть единиц длины и ссылки Production Extension. Для Bambu доступны выбор распознанной пластины и исключение служебных частей с предупреждением. Неизвестные обязательные расширения отклоняются; текстуры, исходные цвета, painting/AMS и настройки печати не воспроизводятся. Модель показывается нейтральным материалом, а фон выбирает пользователь.
+Supported geometry includes meshes, build instances, component transforms, all six Core length units, and Production Extension references. Recognized Bambu plates can be selected, and helper parts are excluded with a warning. Unknown required extensions are rejected. Bambu colors and painting are displayed within the [documented profile](docs/BAMBU-COLORS.md).
 
-Проверены два файла из официального репозитория Bambu Studio, включая проект с метаданными **BambuStudio-01.07.03.04** и внешней model part без `build`. Это не означает совместимость со всеми экспортами этой или новых версий. Источники, SHA-256 и ожидаемая геометрия записаны в [external.json](tests/fixtures/external.json). Внешние модели не включаются в дистрибутив.
+Textures, standard Core/Materials color resources, physical AMS slots, multicolor filament effects, and print settings are not reproduced. Invalid optional painting falls back to a base material with a warning. Overlapping parts are rendered without a slicer's Boolean operations; coincident surfaces may show color flicker. A painting brush and export are not included in 1.3.
 
-Файл без пригодной геометрии, в том числе G-code-only 3MF, получает ошибку. «Любой 3MF» означает возможность выбрать и проверить файл; неподдерживаемый формат не выдаётся за успешно открытый.
+Five public files have been checked: two from the official Bambu Studio repository and three issue attachments. Their recorded exporter versions are **01.07.03.04, 01.07.03.50, 01.10.02.76, and 02.04.00.70**; one file has no exporter version. The corpus covers external model parts, part assignments, whole painted faces, and face subdivisions. This does not establish compatibility with every export from those or newer versions. Sources, SHA-256 hashes, and expected geometry are recorded in [external.json](tests/fixtures/external.json). External models are not bundled.
 
-## Управление
+Files without usable geometry, including G-code-only 3MF files, receive an error. “Any 3MF” means a file can be selected and inspected; an unsupported format is not reported as successfully loaded.
 
-| Действие | Управление |
+## Controls
+
+| Action | Control |
 | --- | --- |
-| Открыть | File → Open… / Файл → Открыть…; `⌘O` или `Ctrl+O` |
-| Вращать | Левая кнопка + движение; `Alt` + стрелки при фокусе viewport |
-| Перемещать | Стрелки; `Shift` + стрелки — быстрее; средняя кнопка или `Shift` + левая |
-| Масштаб | Колесо / прокрутка, кнопки и клавиши `+` / `−` |
-| Показать всё | `F`, View → Fit all или кнопка инспектора |
-| Сбросить вид | `Home` или View → Reset view |
-| Сторона / проекция | View → Orientation / Projection или панель справа |
-| Фон | Палитра, `#RRGGBB`, пресеты |
-| Настройки и язык | YO3MFS → Settings…; `⌘,` / `Ctrl+,`; вкладка Settings справа |
-| О приложении | YO3MFS / Help → About YO3MFS |
-| Отмена загрузки | «Отмена» или `Esc` |
+| Open | File → Open…; `⌘O` / `Ctrl+O` |
+| Orbit | Left-button drag; `Alt` + arrows with viewport focus |
+| Pan | Arrow keys; `Shift` + arrows for faster movement; middle-button or `Shift` + left-button drag |
+| Zoom | Wheel/scroll, buttons, or `+` / `−` keys |
+| Fit all | `F`, View → Fit all, or the inspector button |
+| Reset view | `Home` or View → Reset view |
+| Orientation / projection | View submenus or the right panel |
+| Model colors | Materials → Project colors / Neutral |
+| Background | Color picker, `#RRGGBB`, or presets |
+| Settings and language | YO3MFS → Settings…; `⌘,` / `Ctrl+,`; Settings tab |
+| About | YO3MFS → About YO3MFS |
+| Cancel loading | Cancel or `Esc` |
 
-Pinch обрабатывается, если его передаёт оконная система. Клавиатурная камера работает после клика в viewport; стрелки в поле HEX, меню и диалогах не управляют камерой. Help → Controls или `F1` открывает памятку. `⌘W` / `Ctrl+W` закрывает окно, `⌘Q` / `Ctrl+Q` завершает приложение. Системный диалог выбора файла использует язык операционной системы.
+Pinch is handled when the window system provides it. Click the viewport to enable camera keyboard controls; arrows in the HEX field, menus, or dialogs do not move the camera. Help → Controls or `F1` opens the control guide. `⌘W` / `Ctrl+W` closes the window; `⌘Q` / `Ctrl+Q` quits. The system file picker follows the operating system's language.
 
-## Сборка и проверка
+## Build and verify
 
 ```bash
 cargo fmt --all -- --check
@@ -76,37 +96,38 @@ python3 scripts/package.py --dmg  # macOS .app + .dmg
 python3 scripts/package.py        # Windows ZIP / Linux tar.gz / macOS .app
 ```
 
-Для core-тестов окно и GPU не нужны. RTK требуется только локальными инструкциями агента, приложение от него не зависит.
+Packaging requires Python 3.11 or newer; GitHub Actions installs Python 3.13. Core tests require neither a window nor a GPU. RTK is a local agent-tooling convention, not an application or CI dependency.
 
-На macOS нужны Xcode Command Line Tools; на Windows — MSVC Build Tools с Windows SDK. Для Ubuntu 24.04 набор build-пакетов приведён в [CI workflow](.github/workflows/ci.yml). Для Linux нужны рабочий графический backend, X11 либо Wayland и установленный `xdg-desktop-portal` с backend рабочего стола для диалога [rfd](https://github.com/PolyMeilex/rfd). Runtime на чистой Linux-системе ещё предстоит проверить. Linux tar.gz содержит бинарник, README, PNG и desktop entry, не системные библиотеки; AppImage пока не выпускается.
+macOS requires Xcode Command Line Tools. Windows requires MSVC Build Tools and the Windows SDK. Ubuntu 24.04 build packages are listed in the [workflow](.github/workflows/ci.yml). Linux needs a working graphical backend, X11 or Wayland, and `xdg-desktop-portal` with the desktop's portal backend for the [rfd](https://github.com/PolyMeilex/rfd) file picker. A clean Linux installation still needs runtime testing. The tar.gz includes the binary, instructions, icon, desktop entry, and font license; it is not an AppImage.
 
 ```bash
-# Необязательная проверка двух публичных моделей; загрузка только по этому явному флагу
+# Optional: download and verify five pinned public reference models
 python3 scripts/check_reference_models.py --download
-# Собственная модель почти с миллионом треугольников и headless-измерение
+# Generate a model with nearly one million triangles and measure headless import
 python3 scripts/generate_benchmark.py
 cargo run --locked --release --no-default-features --example inspect -- target/benchmark.3mf
 ```
 
-ZIP/XML разбираются потоково с лимитами, без извлечения файлов и загрузки внешних URI. Настройки записываются атомарно в системный каталог приложения. Пределы формата и памяти описаны в [SPEC.md](SPEC.md).
+ZIP/XML are streamed with limits, without extracting files or fetching external URIs. Settings are written atomically to the OS-specific user configuration directory. Format and memory limits are described in [SPEC.md](SPEC.md).
 
-## Документация
+## Documentation
 
-- [SPEC.md](SPEC.md) — требования, архитектура, пределы и критерии приёмки.
-- [AGENTS.md](AGENTS.md) — правила разработки.
-- [docs/VALIDATION.md](docs/VALIDATION.md) — результаты и ограничения проверки.
-- [tasks/todo.md](tasks/todo.md) — состояние задач реализации.
+- [SPEC.md](SPEC.md) — requirements, architecture, limits, and acceptance criteria.
+- [AGENTS.md](AGENTS.md) — development rules, including English documentation and both UI dictionaries.
+- [GitHub Actions](docs/GITHUB-ACTIONS.md) — runners, build artifacts, and first-push instructions.
+- [Bambu colors](docs/BAMBU-COLORS.md) — painting format and compatibility profile.
+- [Validation](docs/VALIDATION.md) — evidence and remaining checks.
+- [Implementation plan](tasks/plan.md) and [task status](tasks/todo.md).
 
-Проект независимый и не является официальным продуктом Bambu Lab. Лицензия проекта пока не выбрана; публичное распространение требует решения владельца и проверки лицензий зависимостей. Приватные модели не добавляются в репозиторий автоматически.
+YO3MFS is independent and is not an official Bambu Lab product. A project license has not yet been selected; public distribution requires the owner's licensing decision and dependency-license review. Private user models are never added to the repository automatically.
 
-## Логотип и иконка
+## Logo and icons
 
-Утверждённый знак используется в пустом окне, About и системных ресурсах приложения. [PNG, ICNS, ICO и промпты](assets/branding/README.md) сохранены в проекте; графика встроена в бинарник. macOS bundle содержит ICNS, Windows EXE получает ICO через build.rs, Linux-пакет содержит PNG и desktop entry. Текстовое меню находится внутри окна (egui MenuBar); системная рамка окна остаётся нативной, интеграция с глобальным меню macOS не заявляется.
+The approved mark appears in the empty window, About, and OS application resources. [PNG, ICNS, ICO, and prompts](assets/branding/README.md) are retained in the repository; graphics are embedded in the executable. The macOS bundle contains ICNS, the Windows EXE embeds ICO through `build.rs`, and the Linux package contains PNG and a desktop entry. The menu is an in-window egui MenuBar; the OS window frame is native, but integration with the global macOS menu bar is not implemented.
 
+### Linux application menu icon
 
-### Иконка в меню приложений Linux
-
-Из распакованного tar.gz можно установить приложение и ярлык для текущего пользователя:
+From the extracted tar.gz, install the binary and launcher for the current user:
 
 ```bash
 install -Dm755 yo3mfs "$HOME/.local/bin/yo3mfs"
@@ -114,4 +135,4 @@ install -Dm644 share/applications/com.yo3mfs.viewer.desktop "$HOME/.local/share/
 install -Dm644 share/icons/hicolor/512x512/apps/com.yo3mfs.viewer.png "$HOME/.local/share/icons/hicolor/512x512/apps/com.yo3mfs.viewer.png"
 ```
 
-Каталог `$HOME/.local/bin` должен быть в PATH графической сессии. App ID совпадает с именем desktop entry, чтобы Wayland мог связать окно с иконкой. Установка не меняет ассоциации 3MF. Нативная проверка Linux остаётся отдельным пунктом приёмки.
+`$HOME/.local/bin` must be in the graphical session's PATH. The app ID matches the desktop entry so Wayland can associate the window with its icon. Installation does not change 3MF file associations. Native Linux verification remains part of platform acceptance.

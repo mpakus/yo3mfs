@@ -1,6 +1,6 @@
 use super::{CORE, ImportError, Limits, PRODUCTION, invalid, package, xml::Tag};
 use crate::i18n::{Key, Message};
-use crate::scene::Mesh;
+use crate::scene::{FacetPaint, Mesh};
 use glam::{DMat4, DVec3};
 use std::{collections::HashMap, sync::atomic::AtomicBool};
 
@@ -34,6 +34,7 @@ impl Model {
 pub struct Budget {
     pub bytes: usize,
     triangles: usize,
+    expanded_triangles: usize,
 }
 impl Budget {
     pub fn charge(&mut self, bytes: usize, limits: &Limits) -> Result<(), ImportError> {
@@ -56,6 +57,7 @@ pub struct Parser<'a> {
     model: Model,
     current: Option<(u32, Object)>,
     visual_warning: bool,
+    paint_warning: bool,
     build_seen: bool,
     resources_seen: bool,
     skipped: usize,
@@ -82,6 +84,7 @@ impl<'a> Parser<'a> {
             },
             current: None,
             visual_warning: false,
+            paint_warning: false,
             build_seen: false,
             resources_seen: false,
             skipped: 0,
@@ -121,10 +124,7 @@ impl<'a> Parser<'a> {
                     (!ns.is_empty()
                         && ns != PRODUCTION
                         && ns != "http://www.w3.org/XML/1998/namespace")
-                        || matches!(
-                            key.as_str(),
-                            "pid" | "p1" | "p2" | "p3" | "displaycolor" | "paint_color"
-                        )
+                        || matches!(key.as_str(), "pid" | "p1" | "p2" | "p3" | "displaycolor")
                 }))
         {
             self.visual_warning = true;
@@ -182,6 +182,7 @@ impl<'a> Parser<'a> {
                 o.1.mesh = Some(Mesh {
                     vertices: vec![],
                     triangles: vec![],
+                    painting: vec![],
                 });
             }
             (["model", "resources", "object", "mesh", "vertices", "vertex"], false) => {
@@ -220,7 +221,45 @@ impl<'a> Parser<'a> {
                 for (i, key) in ["v1", "v2", "v3"].iter().enumerate() {
                     tri[i] = t.need(key)?.parse().map_err(|_| invalid(Key::BadIndex))?;
                 }
+                let mut paint = None;
+                if let Some(code) = t.attr("paint_color").filter(|s| !s.is_empty()) {
+                    match super::paint::visit(
+                        code,
+                        [DVec3::ZERO, DVec3::X, DVec3::Y],
+                        &self.limits,
+                        self.cancel,
+                        |_, _| {},
+                    ) {
+                        Ok(leaves) => {
+                            self.budget.charge(
+                                code.len() * 2 + std::mem::size_of::<FacetPaint>() * 2,
+                                &self.limits,
+                            )?;
+                            paint = Some(FacetPaint {
+                                triangle: 0,
+                                code: code.to_owned(),
+                                leaves,
+                            });
+                        }
+                        Err(ImportError::Invalid(_)) => self.paint_warning = true,
+                        Err(error) => return Err(error),
+                    }
+                }
+                self.budget.expanded_triangles = self
+                    .budget
+                    .expanded_triangles
+                    .saturating_add(paint.as_ref().map_or(1, |p| p.leaves));
+                if self.budget.expanded_triangles > self.limits.rendered_triangles {
+                    return Err(ImportError::Limit(Key::RenderedTriangles));
+                }
                 let mesh = self.mesh()?;
+                if let Some(mut paint) = paint {
+                    paint.triangle = mesh.triangles.len();
+                    mesh.painting
+                        .try_reserve(1)
+                        .map_err(|_| ImportError::Limit(Key::TriangleMemory))?;
+                    mesh.painting.push(paint);
+                }
                 mesh.triangles
                     .try_reserve(1)
                     .map_err(|_| ImportError::Limit(Key::TriangleMemory))?;
@@ -267,18 +306,34 @@ impl<'a> Parser<'a> {
                     }
                     let before = mesh.triangles.len();
                     let mut kept = 0;
+                    let mut paint_cursor = 0;
+                    let mut paints_kept = 0;
                     for n in 0..mesh.triangles.len() {
                         if n % 4096 == 0 {
                             super::check_cancel(self.cancel)?;
                         }
                         let t = mesh.triangles[n];
                         let [a, b, c] = t.map(|i| mesh.vertices[i as usize]);
-                        if (b - a).cross(c - a).length_squared() > 0. {
+                        let keep = (b - a).cross(c - a).length_squared() > 0.;
+                        if mesh
+                            .painting
+                            .get(paint_cursor)
+                            .is_some_and(|p| p.triangle == n)
+                        {
+                            if keep {
+                                mesh.painting[paint_cursor].triangle = kept;
+                                mesh.painting.swap(paints_kept, paint_cursor);
+                                paints_kept += 1;
+                            }
+                            paint_cursor += 1;
+                        }
+                        if keep {
                             mesh.triangles[kept] = t;
                             kept += 1;
                         }
                     }
                     mesh.triangles.truncate(kept);
+                    mesh.painting.truncate(paints_kept);
                     self.skipped += before - mesh.triangles.len();
                     if mesh.triangles.is_empty() {
                         return Err(ImportError::Empty);
@@ -349,6 +404,9 @@ impl<'a> Parser<'a> {
         }
         if self.visual_warning {
             self.warnings.push(Key::VisualWarning.into());
+        }
+        if self.paint_warning {
+            self.warnings.push(Key::PaintWarning.into());
         }
         if self.skipped > 0 {
             self.warnings

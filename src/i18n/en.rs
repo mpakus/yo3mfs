@@ -2,6 +2,26 @@ use super::Key;
 
 pub(super) const fn get(key: Key) -> &'static str {
     match key {
+        Key::BadPaint => "Invalid Bambu facet paint",
+        Key::PaintDepth => "paint subdivision depth",
+        Key::ProjectSettingsSize => "project color settings size",
+        Key::PaletteWarning => {
+            "Some filament colors are missing or invalid. Those areas use the part color or neutral material."
+        }
+        Key::PaintWarning => "Some facet paint could not be read. Those faces use the part color.",
+        Key::FilamentEffectsWarning => {
+            "Multicolor filament effects are shown using the base color."
+        }
+        Key::Materials => "MATERIALS",
+        Key::ProjectColors => "Project colors",
+        Key::NeutralMaterial => "Neutral",
+        Key::Filaments => "Project filaments",
+        Key::NoProjectColors => "No project palette. Neutral material is used.",
+        Key::UnknownColor => "Unavailable",
+        Key::ColorPreviewHint => {
+            "Preview of saved project colors. Printing settings and physical AMS slots are not simulated."
+        }
+
         Key::HelpMenu => "Help",
         Key::Preferences => "Settings…",
         Key::AboutApp => "About YO3MFS",
@@ -117,7 +137,7 @@ pub(super) const fn get(key: Key) -> &'static str {
         }
         Key::RawDetail => "{0}",
         Key::VisualWarning => {
-            "Simplified appearance: original colors, textures and optional extensions are not applied."
+            "Core materials, textures and other optional visual extensions are not applied."
         }
         Key::DegenerateWarning => "Degenerate triangles skipped: {0}",
         Key::ExcludedWarning => {
@@ -127,7 +147,7 @@ pub(super) const fn get(key: Key) -> &'static str {
             "Plates could not be resolved unambiguously. All objects are shown in their original coordinates."
         }
         Key::UnknownRole => "Unknown part role: original geometry is shown.",
-        Key::BambuWarning => "Bambu Studio: print settings and original colors are not applied.",
+        Key::BambuWarning => "Bambu Studio: print settings are not simulated.",
         Key::GeometryMemory => "geometry memory",
         Key::ExpectedCore => "Expected a Core 3MF model",
         Key::DuplicateResources => "Duplicate resources section",

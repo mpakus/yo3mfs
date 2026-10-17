@@ -1,5 +1,19 @@
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Key {
+    BadPaint,
+    PaintDepth,
+    ProjectSettingsSize,
+    PaletteWarning,
+    PaintWarning,
+    FilamentEffectsWarning,
+    Materials,
+    ProjectColors,
+    NeutralMaterial,
+    Filaments,
+    NoProjectColors,
+    UnknownColor,
+    ColorPreviewHint,
+
     HelpMenu,
     Preferences,
     AboutApp,
@@ -203,6 +217,19 @@ pub enum Key {
 }
 impl Key {
     pub const ALL: &[Self] = &[
+        Self::BadPaint,
+        Self::PaintDepth,
+        Self::ProjectSettingsSize,
+        Self::PaletteWarning,
+        Self::PaintWarning,
+        Self::FilamentEffectsWarning,
+        Self::Materials,
+        Self::ProjectColors,
+        Self::NeutralMaterial,
+        Self::Filaments,
+        Self::NoProjectColors,
+        Self::UnknownColor,
+        Self::ColorPreviewHint,
         Self::HelpMenu,
         Self::Preferences,
         Self::AboutApp,
