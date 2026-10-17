@@ -8,7 +8,7 @@ Open a file, inspect it from any angle, and choose a comfortable background. YO3
 
 ![YO3MFS displaying a black and orange 3MF phone case with project colors and the scene inspector](screenshot.png)
 
-**Current version: 1.3.1.** The application has been tested locally on Apple Silicon. All four native GitHub build jobs passed for 1.3.0; each release runs the same checks again. A successful build is separate from manual GUI acceptance; see [validation results and remaining checks](docs/VALIDATION.md).
+**Current version: 1.3.1.** The application has been tested locally on Apple Silicon. All four native GitHub build jobs and release publication passed for [v1.3.1](https://github.com/mpakus/yo3mfs/actions/runs/39000331367). A successful build is separate from manual GUI acceptance; see [validation results and remaining checks](docs/VALIDATION.md).
 
 ## Download and run
 

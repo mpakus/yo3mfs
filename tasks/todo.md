@@ -36,4 +36,4 @@ Remaining limits: coincident surfaces in intersecting parts may flicker; slicer 
 - [x] Update Cargo versions, README platform download links, and release notes.
 - [x] Publish version-tag builds after all native checks; validate the complete asset set and combined checksums.
 - [x] Keep build jobs read-only and limit release write permission to the tag publishing job.
-- [ ] Publish v1.3.1 and verify all four public downloads against SHA256SUMS.
+- [x] Publish v1.3.1 and verify all four public downloads against SHA256SUMS; all five README asset URLs return HTTP 200.

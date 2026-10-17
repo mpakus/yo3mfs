@@ -177,3 +177,12 @@ The owner requested publishing build packages on GitHub Releases and linking the
 Version 1.3.1 adds version-tag publication after the complete native build matrix, a strict four-package/version/checksum gate, combined SHA256SUMS, release notes, and direct README downloads. Uploads go to a draft before it becomes public. An interrupted draft can be resumed; existing published assets are never overwritten. Build jobs retain read-only permissions, with write access limited to the release job. The new download action is pinned to the verified official v8.0.2 commit.
 
 Local pre-publication checks passed: **46 Rust tests**, **12 Python packaging/release tests**, formatting, Clippy with `-D warnings`, actionlint, tag/Cargo version agreement, and local documentation links. Regression coverage includes mismatched tags/lockfiles, missing notes/platforms, wrong-version or modified packages, draft resumption, immutable published releases, and failed uploads staying unpublished. Publication and downloaded-asset verification are recorded separately after the hosted run finishes. Signing and remaining manual platform acceptance are unchanged.
+
+
+### Hosted release and public downloads
+
+The [v1.3.1 tag run](https://github.com/mpakus/yo3mfs/actions/runs/39000331367) passed all five jobs: macOS Apple Silicon, macOS Intel, Windows x64, Linux x64, and Publish GitHub Release. The annotated tag points to commit `9391ec05b0e3bf4d2b71dd27e22cc813e618048c`. Each native build executed its CLI version smoke test and package verification before upload.
+
+[YO3MFS v1.3.1](https://github.com/mpakus/yo3mfs/releases/tag/v1.3.1) was published as Latest on October 16, 2026 (America/Chicago). It is public, not a draft or prerelease, with exactly four native packages and `SHA256SUMS`. All four packages were downloaded from the Release and their hashes matched the combined checksum file. The five direct asset URLs in README returned HTTP 200 without authentication. The published README contains the release links and existing screenshot.
+
+The redundant branch run for the same release commit was canceled after the tag run started; the successful tag run is the release evidence. Documentation updates after publication do not move the release tag or change its binaries. Signing, manual Intel/Windows/Linux GUI acceptance, and licensing decisions remain outstanding as documented above.
