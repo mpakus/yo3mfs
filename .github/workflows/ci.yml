@@ -103,11 +103,29 @@ jobs:
       - name: macOS DMG
         if: runner.os == 'macOS'
         run: python scripts/package.py --target ${{ matrix.target }} --dmg --output-dir dist/package
+      - name: Sign and notarize macOS release
+        if: runner.os == 'macOS' && startsWith(github.ref, 'refs/tags/v')
+        env:
+          DEVELOPER_ID_APPLICATION: ${{ secrets.DEVELOPER_ID_APPLICATION }}
+          MACOS_CERTIFICATE_BASE64: ${{ secrets.MACOS_CERTIFICATE_BASE64 }}
+          MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+          APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+        run: python scripts/sign_macos.py dist/package
+      - name: Remove temporary signing credentials
+        if: always() && runner.os == 'macOS' && startsWith(github.ref, 'refs/tags/v')
+        run: python scripts/sign_macos.py --cleanup
       - name: Windows or Linux portable package
         if: runner.os != 'macOS'
         run: python scripts/package.py --target ${{ matrix.target }} --output-dir dist/package
       - name: Verify package and checksum
+        if: runner.os != 'macOS' || !startsWith(github.ref, 'refs/tags/v')
         run: python scripts/verify_package.py dist/package
+      - name: Verify notarized release package and checksum
+        if: runner.os == 'macOS' && startsWith(github.ref, 'refs/tags/v')
+        run: python scripts/verify_package.py dist/package --require-notarization
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ${{ matrix.artifact }}

@@ -13,6 +13,7 @@ from pathlib import Path
 root = Path(__file__).resolve().parent.parent
 parser = argparse.ArgumentParser()
 parser.add_argument('directory', type=Path)
+parser.add_argument('--require-notarization', action='store_true')
 args = parser.parse_args()
 version = tomllib.loads((root / 'Cargo.toml').read_text())['package']['version']
 packages = [p for p in args.directory.iterdir()
@@ -20,6 +21,8 @@ packages = [p for p in args.directory.iterdir()
 if len(packages) != 1:
     raise SystemExit('Expected exactly one package in the output directory')
 package = packages[0]
+if args.require_notarization and package.suffix != '.dmg':
+    raise SystemExit('Notarization verification requires a macOS DMG')
 with package.open('rb') as stream:
     digest = hashlib.file_digest(stream, 'sha256').hexdigest()
 expected = f'{digest}  {package.name}\n'
@@ -38,6 +41,16 @@ if package.suffix == '.dmg':
     assert (bundle / 'Contents/Resources/NotoSansSymbols2-OFL.txt').is_file()
     subprocess.run(['codesign', '--verify', '--deep', '--strict', str(bundle)], check=True)
     subprocess.run(['hdiutil', 'verify', str(package)], check=True)
+    if args.require_notarization:
+        details = subprocess.run(['codesign', '--display', '--verbose=4', str(bundle)],
+                                 capture_output=True, text=True, check=True).stderr
+        if 'Authority=Developer ID Application:' not in details or '(runtime)' not in details:
+            raise SystemExit('Release requires Developer ID signing with hardened runtime')
+        subprocess.run(['codesign', '--verify', '--strict', str(package)], check=True)
+        subprocess.run(['xcrun', 'stapler', 'validate', str(package)], check=True)
+        subprocess.run(['spctl', '--assess', '--type', 'open', '--context',
+                        'context:primary-signature', '--verbose=4', str(package)], check=True)
+        subprocess.run(['spctl', '--assess', '--type', 'execute', '--verbose=4', str(bundle)], check=True)
 elif package.suffix == '.zip':
     with zipfile.ZipFile(package) as archive:
         assert archive.testzip() is None

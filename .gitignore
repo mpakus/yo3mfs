@@ -3,3 +3,6 @@
 .DS_Store
 *.log
 __pycache__/
+*.p12
+*.p8
+*.keychain-db

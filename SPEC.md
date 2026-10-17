@@ -63,6 +63,8 @@ Verify system libraries, graphics drivers, and Linux file-picker portals on clea
 
 GitHub Actions must build all four targets on native runners, using the pinned toolchain and lockfile. Pushes, pull requests, and manual runs perform checks before uploading packages/checksums. Version tags matching Cargo.toml and Cargo.lock publish a GitHub Release only after all four native jobs pass. Require release notes and exactly four packages with verified checksums; create/upload a draft before publishing it. Branch/PR builds only upload Actions artifacts. Published assets and tags must not be replaced. README links directly to the versioned downloads. Runner labels, archive names, and instructions are maintained in [docs/GITHUB-ACTIONS.md](docs/GITHUB-ACTIONS.md).
 
+Following the v1.3.1 Gatekeeper report, new tagged macOS builds must use Developer ID signing with hardened runtime/timestamps and Apple notarization. Reuse the GitRonimo secret schema, isolate and clean up imported credentials, require an Accepted notary result, staple the DMG ticket, and pass Gatekeeper for the DMG/app before checksums or publication. Missing/invalid credentials must stop release publication rather than falling back to ad-hoc signing. Development builds remain ad-hoc signed. Published v1.3.1 assets are unchanged; a new version is required for signed downloads. See [macOS signing](docs/MACOS-SIGNING.md).
+
 ## 4. Functional requirements
 
 ### FR-01. Open a document

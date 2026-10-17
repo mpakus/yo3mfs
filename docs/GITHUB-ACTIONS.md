@@ -19,7 +19,7 @@ Branch pushes, pull requests, and manual branch runs produce development artifac
 
 ## Publish a version
 
-The owner authorized version-tag publishing for v1.3.1. No personal access token or signing secret is needed; the release job uses GitHub's scoped `GITHUB_TOKEN`.
+The owner authorized version-tag publishing for v1.3.1 and subsequently requested reuse of GitRonimo's signing setup. GitHub publication uses its scoped `GITHUB_TOKEN`; new macOS release builds additionally require the seven [signing and notarization secrets](MACOS-SIGNING.md). Configure them before pushing a new version tag. Existing v1.3.1 assets remain unnotarized.
 
 1. Update the package version in `Cargo.toml` and the `yo3mfs` entry in `Cargo.lock` together.
 2. Add English notes at `docs/releases/vVERSION.md`, and update the current version and all direct package URLs in README. Keep historical validation records unchanged.
@@ -51,8 +51,9 @@ The job then runs:
 4. An optimized release build for the explicit target triple.
 5. A `--version` smoke check against the version in `Cargo.toml`.
 6. Native packaging with `scripts/package.py`.
-7. `scripts/verify_package.py`: checksum and package structure; macOS also verifies the bundle signature and DMG, Linux checks executable permissions.
-8. Artifact upload only after all checks pass.
+7. Tagged macOS builds sign and notarize their app/DMG using `scripts/sign_macos.py`, staple the ticket, check Gatekeeper, and regenerate checksums. Credential files and the temporary keychain are cleaned up, including after failure.
+8. `scripts/verify_package.py`: checksum and package structure; macOS also verifies the bundle signature and DMG, Linux checks executable permissions. Tagged macOS builds use `--require-notarization` to independently check Developer ID, hardened runtime, the stapled ticket, and Gatekeeper.
+9. Artifact upload only after all checks pass.
 
 Actions are pinned to verified release commit SHAs, with version comments. Default permissions and build jobs are `contents: read`; only the tag publishing job receives `contents: write`. There is no `pull_request_target` or cross-run artifact promotion. Build jobs have a 60-minute timeout and do not fail-fast across platforms. Newer branch/PR runs cancel superseded runs; tag builds are not canceled this way. No private 3MF files or optional external compatibility models are downloaded in CI.
 
@@ -90,4 +91,4 @@ On Windows/Linux, substitute the native target and omit `--dmg`. The verifier ex
 
 CI tests do not open a native GUI or exercise drag-and-drop, trackpads, physical GPUs, or Linux portals. Those remain manual acceptance checks on every target. Linux packages are built on Ubuntu 24.04 and do not promise compatibility with every distribution or older glibc.
 
-macOS packages have ad-hoc signatures, without Developer ID/notarization. Windows packages are not Authenticode-signed. Signing, license selection/dependency review, and clean-system installation checks remain outstanding. Publishing a downloadable release does not claim those checks are complete or grant an open-source license.
+Published v1.3.1 and development macOS packages have ad-hoc signatures. The new tag workflow requires Developer ID signing and notarization; a credentialed run is still needed to validate that path. Windows packages are not Authenticode-signed. License selection/dependency review and clean-system installation checks remain outstanding. Publishing a downloadable release does not claim those checks are complete or grant an open-source license.

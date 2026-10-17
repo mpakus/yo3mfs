@@ -38,6 +38,8 @@ Version 1.3.1 is not notarized, so macOS may block it with an alert that Apple c
 
 See [Apple's instructions](https://support.apple.com/en-us/102445). This approves the current app locally; it does not notarize the release. Removing this verification warning for other users requires a future build signed with Developer ID and notarized by Apple.
 
+The next macOS release workflow now includes [Developer ID signing and notarization](docs/MACOS-SIGNING.md), adapted from GitRonimo. It requires signing credentials and a successful new tagged build; the v1.3.1 downloads above remain unchanged.
+
 ### Run from source
 
 To run from source, install Rust/rustup and your platform's build tools:

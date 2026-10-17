@@ -71,6 +71,11 @@ class PackagingTests(unittest.TestCase):
         with self.assertRaisesRegex(SystemExit, 'checksum mismatch'):
             self.run_script('verify_package.py', self.out)
 
+    def test_notarization_requirement_rejects_non_macos_package(self):
+        self.package('Windows', 'x86_64-pc-windows-msvc')
+        with self.assertRaisesRegex(SystemExit, 'requires a macOS DMG'):
+            self.run_script('verify_package.py', self.out, '--require-notarization')
+
 
 if __name__ == '__main__':
     unittest.main()

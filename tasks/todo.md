@@ -37,3 +37,10 @@ Remaining limits: coincident surfaces in intersecting parts may flicker; slicer 
 - [x] Publish version-tag builds after all native checks; validate the complete asset set and combined checksums.
 - [x] Keep build jobs read-only and limit release write permission to the tag publishing job.
 - [x] Publish v1.3.1 and verify all four public downloads against SHA256SUMS; all five README asset URLs return HTTP 200.
+
+## macOS signing follow-up
+
+- [x] Inspect GitRonimo, Cuckoding, and KickstandMoto configuration and adapt the applicable Developer ID/notarization workflow.
+- [x] Require signing, notarization, stapling, Gatekeeper checks, and credential cleanup for tagged macOS builds; add negative regression tests.
+- [ ] Configure the original signing credentials as YO3MFS repository secrets.
+- [ ] Publish a new patch version with signed Apple Silicon/Intel DMGs and verify downloaded Gatekeeper acceptance.
