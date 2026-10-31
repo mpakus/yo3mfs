@@ -1,8 +1,42 @@
-# YO3MFS — desktop 3MF viewer specification
+# YO3MFS — desktop 3D model viewer specification
 
-**Status:** v1.3.1 contract; implementation and local macOS builds are available. Full platform acceptance is not complete; version-tag release publication is authorized. Evidence is recorded in [docs/VALIDATION.md](docs/VALIDATION.md).
+**Status:** v1.5.0 source with STL, STEP, OBJ, glTF/GLB, and PLY preview support; not yet published; implementation and local macOS builds are available. Full platform acceptance is not complete; version-tag release publication is authorized. Evidence is recorded in [docs/VALIDATION.md](docs/VALIDATION.md).
 
-**Date:** October 16, 2026. **Product name:** YO3MFS.
+**Updated:** October 31, 2026. **Product name:** YO3MFS.
+
+## Version 1.4 contract — OBJ, glTF/GLB, and PLY (October 31, 2026)
+
+- Add `.obj`, `.gltf`, `.glb`, and `.ply` to picker, drop, startup, and headless inspection paths. Release these additions as 1.5.0, including the previously unpublished STL/STEP work. Preserve existing 3MF/STL/STEP behavior. Recognizable content takes precedence over filename hints.
+- Follow [the static mesh profile](docs/MESH-FORMATS.md): OBJ polygons and relative/slash indices; ASCII and both binary PLY byte orders; self-contained glTF 2.0/GLB scenes with shared instances, transforms, triangle lists/strips/fans, sparse/interleaved accessors, and base/vertex colors.
+- OBJ/PLY coordinates remain unchanged and are interpreted as millimeters with a persistent notice. Convert glTF meters/Y-up to millimeters/Z-up exactly once. Triangulate valid concave planar polygons without changing winding; displayed bounds exclude unused vertices.
+- Show embedded colors through Project colors / Neutral. Interpolate vertex colors in linear light while retaining flat Bambu facet colors. Keep the existing simple opaque lighting; textures, PBR rendering, transparency, animation, point-cloud rendering, skins, and morph deformation are outside this static-viewing increment.
+- Never open external references, including OBJ MTL and glTF buffer/image URIs. Warn for omitted visual data; reject external geometry buffers, unsupported required extensions, malformed geometry, and deformed glTF assets with clear localized explanations.
+- Keep all import work off the UI thread, preserve the last successful scene on failure/cancellation, enforce input/allocation/triangle/instance/depth budgets, and check cancellation. OBJ/PLY lines are bounded at 64 KiB and polygons at 1,024 vertices. glTF input/decoded buffers are at most 64 MiB and JSON at most 16 MiB, within the shared memory budget.
+- Maintain EN/RU dictionaries, synthetic fixture provenance/hashes, numeric coordinate/area/count tests, package dependency notices, and four-target CI checks. Synthetic fixtures do not establish exporter interoperability or native platform acceptance.
+
+## Version 1.4 contract — STL support (October 18, 2026)
+
+- Open ASCII and little-endian binary STL through the same picker, drop, startup argument, and headless inspection paths as 3MF. Content determines the format; the filename extension is a hint.
+- Preserve all coordinates and triangle winding, including negative coordinates. Combine multiple ASCII `solid` sections into one mesh/instance without moving their geometry. Do not infer Bambu plates, object assignments, or units.
+- Interpret STL coordinates as millimeters and retain a localized unit notice. Validate finite normals/coordinates; derive shading normals from geometry. Render neutral material; report ignored binary color/attribute data through a persistent warning.
+- Check binary size against its facet count before reading geometry, including headers beginning with `solid`. Reject truncated records, trailing binary data, incomplete ASCII facets/solids, nonfinite numbers, and coordinates outside the existing range. Skip degenerate facets with a count; reject files with no usable faces.
+- Stream with the shared input, memory, source-triangle, rendered-triangle, instance, and cancellation limits. Count degenerate facets toward the source limit. Bound ASCII lines to 64 KiB, including their line ending. Account for allocation growth and GPU preparation; retain the previous scene on any failure.
+- Accept ordinary ASCII whitespace, CRLF, scientific notation, optional solid names, and multiple solids. Solid names extend to the line ending and are not interpreted as geometry. Colors, unit selection, mesh repair, and STL export are outside this change.
+- STL uses an independent Rust parser without a new dependency. Version 1.5.0 includes the previously unpublished STL and STEP work; published v1.3.1 packages remain 3MF-only.
+
+The parser is implemented independently using the [STL format description](https://www.fabbers.com/tech/STL_Format) and the [Kaitai binary layout specification](https://formats.kaitai.io/stl/) as references. Negative coordinates, whitespace, and multiple solids are pragmatic input allowances. These references do not establish exporter interoperability; see [validation](docs/VALIDATION.md).
+
+## Version 1.4 contract — STEP preview
+
+- Accept `.step` and `.stp` classic uncompressed Part 21 exchanges through the same opening paths, with content-first detection. Preserve embedded assembly placements and source units converted to millimeters.
+- Use pinned `occt-wasm 5.0.1`/Wasmtime 48.0.8 for B-rep conversion and tessellation, outside the UI thread. Keep one Cargo application package, no WebView, no JavaScript, and no project `unsafe`.
+- Display one combined neutral preview. Colors, names, PMI, external files, multi-DATA sections, editing, and export are outside scope. Triangle counts and curved dimensions describe tessellation, not exact CAD topology.
+- Always show localized notes for simplification and OCCT's default normalization/healing. The upstream facade does not expose full root-transfer diagnostics; warn that unsupported entities can be omitted and that this is not guaranteed complete/lossless conversion.
+- Validate imported-face coverage against tessellation groups, rejecting ambiguous hashes, missing faces, nonfinite coordinates, invalid indices, and degenerate output. Recenter in double precision before float extraction and restore the world offset afterward.
+- Enforce 64 MiB STEP input, 512 MiB maximum sandbox linear memory, 100,000 unique faces, shared triangle/geometry budgets, and a 60-second conversion deadline. Check cancellation through WASM epochs every 20 ms. Initial compilation of the fixed kernel is cached per process, off the UI thread, and not interruptible; check cancellation immediately afterward.
+- Preserve the previous scene on every failure/cancellation. No filesystem/network/environment imports are available inside the CAD sandbox. Include dependency notices, replacement/rebuild instructions, and the narrowly required macOS runtime entitlement in packaging.
+
+The complete compatibility, precision, memory-accounting, source/license, and replacement profile is in [docs/STEP.md](docs/STEP.md). Synthetic files establish numeric regression evidence, not general exporter certification.
 
 ## Version 1.3 contract — Bambu Studio colors
 
@@ -19,15 +53,15 @@ The owner's request adds viewing of existing Bambu Studio painting. The applicat
 
 ## 1. Purpose
 
-Build a Rust application for macOS, Linux, and Windows that opens a 3MF and immediately allows inspection of its 3D model. Bambu Studio is the primary source of files; installing Bambu Studio is not required.
+Build a Rust application for macOS, Linux, and Windows that opens a 3MF, STL, STEP, OBJ, glTF/GLB, or PLY and immediately allows inspection of its 3D model. Bambu Studio is the primary source of files; installing Bambu Studio is not required.
 
-Successful workflow: drop a `.3mf` into the window → see the entire scene → rotate to the desired side → zoom into a detail → choose a comfortable background. The original file stays unchanged.
+Successful workflow: drop a `.3mf`, `.stl`, `.step`, `.stp`, `.obj`, `.gltf`, `.glb`, or `.ply` into the window → see the entire scene → rotate to the desired side → zoom into a detail → choose a comfortable background. The original file stays unchanged.
 
 ### Confirmed requirements
 
 1. A desktop application for Apple/macOS, Linux, and Windows.
 2. Rust as the main implementation language.
-3. Open 3MF through a file picker or drag-and-drop.
+3. Open 3MF, STL, STEP, OBJ, glTF/GLB, or PLY through a file picker or drag-and-drop.
 4. Inspect the model from all sides, rotate, zoom in, and zoom out.
 5. Change the overall viewport background color.
 
@@ -41,11 +75,11 @@ Successful workflow: drop a `.3mf` into the window → see the entire scene → 
 
 These boundaries guided v1; requirement changes must be reflected here.
 
-## 2. Initial version scope
+## 2. Viewer scope
 
-Includes 3MF geometry import, an interactive camera, standard views/projections, background controls, basic scene information, progress/errors, and local settings persistence. Version 1.3 additionally includes the color contract above.
+Includes 3MF, STL, STEP, OBJ, glTF/GLB, and PLY geometry import, an interactive camera, standard views/projections, background controls, basic scene information, progress/errors, and local settings persistence. Version 1.3 additionally includes the color contract above.
 
-Out of scope: slicing, G-code preview, printing, mesh editing/repair, 3MF/STL export, sections, point-to-point measurements, photorealistic materials, physical AMS/printed-appearance simulation, cloud services, telemetry, automatic updates, plugins, OS file associations, and Quick Look/Explorer previews.
+Out of scope: slicing, G-code preview, printing, mesh editing/repair, 3MF/STL/STEP export, sections, point-to-point measurements, photorealistic materials, physical AMS/printed-appearance simulation, cloud services, telemetry, automatic updates, plugins, OS file associations, and Quick Look/Explorer previews.
 
 X/Y/Z dimensions describe the bounds of the displayed scene, not distances between selected points.
 
@@ -69,18 +103,18 @@ Following the v1.3.1 Gatekeeper report, new tagged macOS builds must use Develop
 
 ### FR-01. Open a document
 
-- The empty-window button, File → Open, and `⌘O` / `Ctrl+O` open the system picker with a case-insensitive `.3mf` filter.
-- A single file can be dropped onto a free area of the main window. Show a “Release to open 3MF” hint while hovering.
-- Accept one file path at startup: `yo3mfs "/path/to/model.3mf"`.
+- The empty-window button, File → Open, and `⌘O` / `Ctrl+O` open the system picker with `.3mf`, `.stl`, `.step`, `.stp`, `.obj`, `.gltf`, `.glb`, and `.ply` filters, including uppercase extensions.
+- A single file can be dropped onto a free area of the main window. Show a “Release to open a 3D model” hint while hovering.
+- Accept one file path at startup: `yo3mfs "/path/to/model.3mf"`, `yo3mfs "/path/to/model.stl"`, `yo3mfs "/path/to/model.step"`, `yo3mfs "/path/to/model.stp"`, `yo3mfs "/path/to/model.obj"`, `yo3mfs "/path/to/model.gltf"`, `yo3mfs "/path/to/model.glb"`, or `yo3mfs "/path/to/model.ply"`.
 - Canceling the picker changes nothing. Empty paths, directories, inaccessible files, and invalid formats receive clear messages.
-- Reject multiple dropped files with an instruction to open one 3MF; do not silently choose by ordering.
+- Reject multiple dropped files with an instruction to open one supported model; do not silently choose by ordering.
 - Support spaces and Cyrillic in paths. Store OS paths as `PathBuf`/`OsString`, without requiring conversion to UTF-8.
 - Treat the extension as a hint; validate the content.
 
 ### FR-02. Load and replace a scene
 
 - States: empty, loading, ready, ready with warnings, and error.
-- Keep the UI responsive; expose stages (Reading archive, Parsing model, Preparing scene) and cancellation. Show a percentage only when total work is known.
+- Keep the UI responsive; expose stages (Reading file, Parsing model, Preparing scene) and cancellation. Show a percentage only when total work is known.
 - Automatically fit the first loaded scene in an isometric view.
 - Preserve the previous scene while a new file loads. On failure/cancellation return to it; if no scene exists, keep the empty window with a message.
 - Opening B while A loads cancels A. Only the latest active request may replace the scene; allow at most one heavy load at a time.
@@ -130,7 +164,7 @@ Pinch must not be the only zoom method. Test gestures separately on macOS, Windo
 
 - Show filename, displayed instance count, original triangle count including instances, and X/Y/Z dimensions in mm. Subdivisions are counted separately by headless inspection.
 - Keep warnings accessible after loading; do not show them only in a transient toast.
-- Distinguish access errors, invalid ZIP/XML, absent geometry, unsupported extensions, resource limits, and GPU rendering failures.
+- Distinguish access errors, invalid ZIP/XML/STL/STEP/OBJ/glTF/PLY, absent geometry, unsupported extensions, resource limits, and GPU rendering failures.
 - Include the reason and an available action: open another file, cancel, retry, or inspect details.
 - If no GPU backend works, show diagnostics through available OS facilities and exit cleanly. A software renderer is not promised.
 - On surface loss, `eframe/egui-wgpu` attempts recreation while retaining the CPU scene. On device loss or an unhandled rendering error, show a system message and request closing/restarting. Automatic device recreation/scene restoration is not implemented in v1. Disk contents remain unchanged; artificial device-loss testing is still outstanding.
@@ -181,7 +215,10 @@ The following limits are implemented; their adequacy for large real models remai
 
 | Resource | Initial limit |
 | --- | --- |
-| Input file | 512 MiB |
+| Input file (3MF, STL, or STEP) | 512 MiB |
+| STEP input / sandbox memory | 64 MiB / maximum 512 MiB linear memory; lower shared limits apply |
+| STEP conversion / faces | 60 seconds after kernel initialization / 100,000 unique faces |
+| ASCII STL line | 64 KiB, including line ending |
 | ZIP entries | 10,000; validate EOCD/ZIP64 before building an index |
 | ZIP central directory | 64 MiB, with estimated memory within the shared budget |
 | Expanded bytes of parts actually read | 2 GiB |
@@ -222,6 +259,7 @@ Alternatives considered: Tauri adds a web stack; Bevy suits more complex interac
 | Rendering | `wgpu`, WGSL, depth buffer, shared-device resources |
 | Mathematics | `glam`; import precision accounts for transforms and scale |
 | Container / XML | `zip` and streaming [quick-xml](https://github.com/tafia/quick-xml) |
+| STEP CAD preview | `occt-wasm 5.0.1` with Wasmtime 48.0.8; bounded safe host and replaceable LGPL kernel |
 | File picker | `rfd` |
 | Settings | `serde`, `serde_json`, OS directory through `directories` |
 | Errors | `thiserror`; warnings separate from fatal errors |
@@ -236,7 +274,7 @@ Import and transform composition use f64. Before constructing f32 GPU buffers, s
 ```mermaid
 flowchart LR
     Open[Picker / drop / file argument] --> Request[Load request and cancellation]
-    Request --> Import[Worker: ZIP, XML, Bambu adapter]
+    Request --> Import[Worker: 3MF / STL / STEP sandbox]
     Import --> Validate[Validate references, limits, transforms]
     Validate --> Scene[Immutable scene and warnings]
     Scene --> Render[GPU resources and viewport]
@@ -254,7 +292,9 @@ src/
   main.rs                 # startup and file argument
   lib.rs                  # testable modules
   app.rs                  # window, events, loading states
-  import/                 # ZIP, OPC, XML, validation
+  import/                 # format detection, ZIP, OPC, XML, validation
+    stl.rs                # bounded ASCII/binary STL geometry
+    step.rs / step/       # Part 21 envelope and interruptible CAD sandbox
     bambu.rs              # Bambu metadata and part roles
     paint.rs              # independent bounded paint decoder
   scene.rs                # meshes, instances, bounds
@@ -268,6 +308,7 @@ src/
 assets/shaders/           # WGSL
 tests/
   import_3mf.rs
+  import_stl.rs
   bambu_colors.rs
   fixtures/               # small models and provenance manifests
 docs/VALIDATION.md        # evidence and remaining acceptance
@@ -298,13 +339,13 @@ Use ordinary Rust unit/integration tests for logic. GUI/GPU require separate che
 
 | ID | Required result | Verification |
 | --- | --- | --- |
-| AC-01 | The same 3MF opens through picker, drop, and file argument | Manual checks on all three OS families; Unicode/spaces in paths |
+| AC-01 | The same 3MF and both STL encodings open through picker, drop, and file argument | Manual checks on all three OS families; Unicode/spaces in paths |
 | AC-02 | A normal model is immediately fully visible and inspectable from six sides | UI plus fit/projection/resize tests |
 | AC-03 | Pan/zoom/orbit work with mouse, trackpad, and keyboard without stealing input-field keys | Manual checks, including Linux X11/Wayland |
 | AC-04 | Bounds and instances match expected units, nested transforms, and Production parts | Numeric fixtures including rotation, reflection, nonuniform scale |
 | AC-05 | Background changes immediately and survives restart; invalid HEX/write errors are handled | Settings tests plus UI |
 | AC-06 | Confirmed Bambu files import; modifiers/plates/simplifications have explicit status | Versioned corpus and Bambu Studio comparison |
-| AC-07 | Invalid archives and exceeded limits produce controlled errors, not crashes | Negative fixtures and boundary-memory measurements |
+| AC-07 | Invalid archives/STL and exceeded limits produce controlled errors, not crashes | Negative fixtures and boundary-memory measurements |
 | AC-08 | Cancel/open B during A does not publish an obsolete scene; B's failure preserves the previous scene | Deterministic loader tests plus UI |
 | AC-09 | The source file is unchanged and not uploaded | Before/after SHA-256, offline behavior, network-activity checks |
 | AC-10 | UI responsiveness and performance are measured using the protocol | Release benchmark on identified hardware |
@@ -319,11 +360,16 @@ Use known numeric geometry values, with allowed coordinate error after import of
 
 ## 10. Development commands
 
+On macOS/Linux, `bin/test.dev [model-path]` builds and runs the optimized desktop binary with the pinned toolchain and `Cargo.lock`. It accepts app arguments, preserves relative model paths from the caller's directory, and forwards failures through Cargo. This local launcher does not run automated tests or package/sign the app.
+
 From the Cargo project root:
 
 ```bash
+bin/test.dev
+bin/test.dev tests/fixtures/sample-box.step
 cargo run --locked
 cargo run --locked -- "/path/to/model.3mf"
+cargo run --locked -- "/path/to/model.stl"
 cargo fmt --all -- --check
 cargo clippy --locked --all-targets --all-features -- -D warnings
 cargo test --locked --all-targets --all-features

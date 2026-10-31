@@ -6,7 +6,10 @@ fn main() -> std::io::Result<()> {
         winresource::WindowsResource::new()
             .set_icon("assets/branding/yo3mfs.ico")
             .set("ProductName", "YO3MFS")
-            .set("FileDescription", "YO3MFS — Offline 3MF viewer")
+            .set(
+                "FileDescription",
+                "YO3MFS — Offline 3MF, STL, STEP, OBJ, glTF/GLB, and PLY viewer",
+            )
             .compile()?;
     }
     Ok(())

@@ -52,7 +52,7 @@ impl Loader {
         let progress = Arc::new(AtomicU8::new(0));
         let worker_progress = progress.clone();
         thread::Builder::new()
-            .name("3mf-import".into())
+            .name("model-import".into())
             .spawn(move || {
                 loop {
                     let request = {

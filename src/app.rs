@@ -139,7 +139,13 @@ impl Viewer {
     fn dialog(&mut self) {
         if let Some(path) = rfd::FileDialog::new()
             .set_title(self.t(Key::Open))
-            .add_filter(self.t(Key::FileFilter), &["3mf", "3MF"])
+            .add_filter(
+                self.t(Key::FileFilter),
+                &[
+                    "3mf", "3MF", "stl", "STL", "step", "STEP", "stp", "STP", "obj", "OBJ", "gltf",
+                    "GLTF", "glb", "GLB", "ply", "PLY",
+                ],
+            )
             .pick_file()
         {
             self.open(path);

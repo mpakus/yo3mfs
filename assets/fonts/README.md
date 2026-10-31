@@ -8,3 +8,5 @@ Fallback font for interface symbols, including ✩ and ⌘. The original font is
 - Copyright 2022 The Noto Project Authors.
 - License: SIL Open Font License 1.1; full text in [OFL.txt](OFL.txt).
 - The packager includes the license in macOS Resources and the Windows/Linux package directory.
+
+Version 1.4.0 keeps this font and checksum unchanged. STL/STEP messages use the same English/Russian font setup; STEP dependency licenses are packaged separately under `licenses/`.

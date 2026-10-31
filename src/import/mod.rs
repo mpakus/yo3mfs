@@ -1,9 +1,15 @@
-//! Bounded, read-only 3MF import. No extracted files or external URI fetches.
+//! Bounded, read-only 3MF/STL/STEP import. No extracted files or external URI fetches.
 use crate::i18n::{Key, Message};
 mod bambu;
+mod gltf;
+mod mesh;
 mod model;
+mod obj;
 mod package;
 pub(crate) mod paint;
+mod ply;
+mod step;
+mod stl;
 mod xml;
 mod zip_index;
 
@@ -13,7 +19,7 @@ use model::{Model, Reference};
 use std::{
     collections::{HashMap, HashSet, VecDeque},
     fs::File,
-    io::{Read, Seek},
+    io::{Read, Seek, SeekFrom},
     path::Path,
     sync::atomic::{AtomicBool, AtomicU8, Ordering},
 };
@@ -28,6 +34,12 @@ pub enum ImportError {
     Io(#[from] std::io::Error),
     Zip(#[from] zip::result::ZipError),
     Invalid(Message),
+    Stl(Message),
+    Model(Message),
+    Obj(Message),
+    Ply(Message),
+    Gltf(Message),
+    Step(Message),
     Unsupported(String),
     Limit(Key),
     Cancelled,
@@ -39,6 +51,12 @@ impl ImportError {
             Self::Io(e) => (Key::IoError, e.to_string()),
             Self::Zip(e) => (Key::ZipError, e.to_string()),
             Self::Invalid(m) => (Key::Invalid3mf, m.render(language)),
+            Self::Stl(m) => (Key::InvalidStl, m.render(language)),
+            Self::Model(m) => (Key::InvalidModel, m.render(language)),
+            Self::Obj(m) => (Key::InvalidObj, m.render(language)),
+            Self::Ply(m) => (Key::InvalidPly, m.render(language)),
+            Self::Gltf(m) => (Key::InvalidGltf, m.render(language)),
+            Self::Step(m) => (Key::InvalidStep, m.render(language)),
             Self::Unsupported(ns) => (Key::Unsupported, ns.clone()),
             Self::Limit(key) => (Key::LimitExceeded, language.text(*key).into()),
             Self::Cancelled => return language.text(Key::Cancelled).into(),
@@ -100,11 +118,102 @@ pub fn load_with_progress(
     progress: &AtomicU8,
 ) -> Result<Scene, ImportError> {
     progress.store(1, Ordering::Relaxed);
-    let f = File::open(path)?;
-    if !f.metadata()?.is_file() {
+    check_cancel(cancel)?;
+    let mut f = File::open(path)?;
+    let metadata = f.metadata()?;
+    if !metadata.is_file() {
         return Err(invalid(Key::RegularFile));
     }
-    read_archive_progress(f, limits, cancel, progress)
+    let mut signature = Vec::with_capacity(84);
+    f.by_ref().take(84).read_to_end(&mut signature)?;
+    f.seek(SeekFrom::Start(0))?;
+    if stl::binary_count(&signature, metadata.len()).is_none()
+        && matches!(
+            signature.get(..4),
+            Some(b"PK\x03\x04" | b"PK\x05\x06" | b"PK\x06\x06")
+        )
+    {
+        read_archive_progress(f, limits, cancel, progress)
+    } else {
+        progress.store(2, Ordering::Relaxed);
+        let ascii_stl = signature.trim_ascii_start().starts_with(b"solid");
+        let is_step = signature.trim_ascii_start().starts_with(b"ISO-10303-21;")
+            || path.extension().is_some_and(|ext| {
+                ext.eq_ignore_ascii_case("step") || ext.eq_ignore_ascii_case("stp")
+            });
+        let ext = path.extension();
+        let extension = |name| ext.is_some_and(|e| e.eq_ignore_ascii_case(name));
+        let scene = if stl::binary_count(&signature, metadata.len()).is_some() || ascii_stl {
+            read_stl(f, limits, cancel)?
+        } else if signature.trim_ascii_start().starts_with(b"ISO-10303-21;") {
+            read_step(f, limits, cancel)?
+        } else if signature.starts_with(b"glTF") || signature.trim_ascii_start().starts_with(b"{") {
+            read_gltf(f, limits, cancel)?
+        } else if signature.starts_with(b"ply\n") || signature.starts_with(b"ply\r\n") {
+            read_ply(f, limits, cancel)?
+        } else if extension("obj") || obj::signature(&signature) {
+            read_obj(f, limits, cancel)?
+        } else if extension("gltf") || extension("glb") {
+            read_gltf(f, limits, cancel)?
+        } else if extension("ply") {
+            read_ply(f, limits, cancel)?
+        } else if is_step {
+            read_step(f, limits, cancel)?
+        } else {
+            read_stl(f, limits, cancel)?
+        };
+        progress.store(3, Ordering::Relaxed);
+        Ok(scene)
+    }
+}
+
+pub fn read_ply<R: Read>(
+    input: R,
+    limits: &Limits,
+    cancel: &AtomicBool,
+) -> Result<Scene, ImportError> {
+    ply::read(input, limits, cancel).map_err(|e| match e {
+        ImportError::Model(m) => ImportError::Ply(m),
+        other => other,
+    })
+}
+
+pub fn read_gltf<R: Read>(
+    input: R,
+    limits: &Limits,
+    cancel: &AtomicBool,
+) -> Result<Scene, ImportError> {
+    gltf::read(input, limits, cancel).map_err(|e| match e {
+        ImportError::Model(m) => ImportError::Gltf(m),
+        other => other,
+    })
+}
+
+pub fn read_obj<R: Read>(
+    input: R,
+    limits: &Limits,
+    cancel: &AtomicBool,
+) -> Result<Scene, ImportError> {
+    obj::read(input, limits, cancel).map_err(|e| match e {
+        ImportError::Model(m) => ImportError::Obj(m),
+        other => other,
+    })
+}
+
+pub fn read_step<R: Read>(
+    input: R,
+    limits: &Limits,
+    cancel: &AtomicBool,
+) -> Result<Scene, ImportError> {
+    step::read(input, limits, cancel)
+}
+
+pub fn read_stl<R: Read + Seek>(
+    input: R,
+    limits: &Limits,
+    cancel: &AtomicBool,
+) -> Result<Scene, ImportError> {
+    stl::read(input, limits, cancel)
 }
 
 pub fn read_archive<R: Read + Seek>(

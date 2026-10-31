@@ -25,6 +25,11 @@ arch = args.target or platform.machine()
 binary = root / 'target' / args.target / args.profile / ('yo3mfs.exe' if system == 'Windows' else 'yo3mfs')
 if not binary.is_file():
     raise SystemExit(f'Build first: missing {binary}')
+def copy_notices(destination):
+    shutil.copy2(root / 'THIRD-PARTY-NOTICES.txt', destination)
+    shutil.copytree(root / 'assets/licenses', destination / 'licenses', dirs_exist_ok=True)
+
+
 platform_name = 'macos' if system == 'Darwin' else system.lower()
 out = args.output_dir or root / 'dist' / f'{version}-{platform_name}-{arch}-{args.profile}'
 out.mkdir(parents=True, exist_ok=True)
@@ -37,6 +42,7 @@ if system == 'Darwin':
     shutil.copy2(root / 'assets/fonts/OFL.txt', contents / 'Resources' / 'NotoSansSymbols2-OFL.txt')
     shutil.copy2(root / 'assets/branding/yo3mfs.icns', contents / 'Resources' / 'yo3mfs.icns')
     shutil.copy2(root / 'docs/PACKAGE.md', contents / 'Resources' / 'README.md')
+    copy_notices(contents / 'Resources')
     with (contents / 'Info.plist').open('wb') as f:
         plistlib.dump({
             'CFBundleName': 'YO3MFS', 'CFBundleDisplayName': 'YO3MFS',
@@ -57,13 +63,15 @@ else:
     folder.mkdir(exist_ok=True)
     shutil.copy2(binary, folder / binary.name)
     shutil.copy2(root / 'docs/PACKAGE.md', folder / 'README.md')
+    copy_notices(folder)
     shutil.copy2(root / 'assets/fonts/OFL.txt', folder / 'NotoSansSymbols2-OFL.txt')
     if system == 'Windows':
         shutil.copy2(root / 'assets/branding/yo3mfs.ico', folder / 'yo3mfs.ico')
         artifact = out / f'yo3mfs-{version}-{arch}.zip'
         with zipfile.ZipFile(artifact, 'w', zipfile.ZIP_DEFLATED) as z:
-            for f in folder.iterdir():
-                z.write(f, f'{folder.name}/{f.name}')
+            for f in folder.rglob('*'):
+                if f.is_file():
+                    z.write(f, f'{folder.name}/{f.relative_to(folder).as_posix()}')
     else:
         applications = folder / 'share' / 'applications'
         icons = folder / 'share' / 'icons' / 'hicolor' / '512x512' / 'apps'

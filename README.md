@@ -2,30 +2,30 @@
 
 # YO3MFS
 
-An offline desktop 3MF viewer written in Rust for **macOS, Windows, and Linux**, with support for Bambu Studio project colors and painted faces.
+An offline desktop 3MF, STL, STEP, OBJ, glTF/GLB, and PLY viewer written in Rust for **macOS, Windows, and Linux**, with support for Bambu Studio project colors and painted faces in 3MF.
 
 Open a file, inspect it from any angle, and choose a comfortable background. YO3MFS preserves the original file and does not require Bambu Studio, a printer connection, or an account.
 
 ![YO3MFS displaying a black and orange 3MF phone case with project colors and the scene inspector](screenshot.png)
 
-**Current version: 1.3.1.** The application has been tested locally on Apple Silicon. All four native GitHub build jobs and release publication passed for [v1.3.1](https://github.com/mpakus/yo3mfs/actions/runs/39000331367). A successful build is separate from manual GUI acceptance; see [validation results and remaining checks](docs/VALIDATION.md).
+**Current source version: 1.5.0.** This checkout adds ASCII/binary STL, STEP, OBJ, glTF/GLB, and PLY previews. See [1.5.0 release notes](docs/releases/v1.5.0.md) and [validation results](docs/VALIDATION.md). The previously published [v1.3.1](https://github.com/mpakus/yo3mfs/releases/tag/v1.3.1) supports 3MF only; its successful [four-platform build](https://github.com/mpakus/yo3mfs/actions/runs/39000331367) does not validate the new formats.
 
 ## Download and run
 
-Download **[YO3MFS v1.3.1](https://github.com/mpakus/yo3mfs/releases/tag/v1.3.1)** from GitHub Releases:
+**[YO3MFS v1.5.0](https://github.com/mpakus/yo3mfs/releases/tag/v1.5.0)** package targets (downloads become available only after the tagged build and signing checks succeed):
 
 | Platform | Architecture | Download |
 | --- | --- | --- |
-| macOS | Apple Silicon / ARM64 | [DMG](https://github.com/mpakus/yo3mfs/releases/download/v1.3.1/yo3mfs-1.3.1-aarch64-apple-darwin.dmg) |
-| macOS | Intel / x64 | [DMG](https://github.com/mpakus/yo3mfs/releases/download/v1.3.1/yo3mfs-1.3.1-x86_64-apple-darwin.dmg) |
-| Windows | x64 | [Portable ZIP](https://github.com/mpakus/yo3mfs/releases/download/v1.3.1/yo3mfs-1.3.1-x86_64-pc-windows-msvc.zip) |
-| Linux | x64, built on Ubuntu 24.04 | [Portable tar.gz](https://github.com/mpakus/yo3mfs/releases/download/v1.3.1/yo3mfs-1.3.1-x86_64-unknown-linux-gnu.tar.gz) |
+| macOS | Apple Silicon / ARM64 | [DMG](https://github.com/mpakus/yo3mfs/releases/download/v1.5.0/yo3mfs-1.5.0-aarch64-apple-darwin.dmg) |
+| macOS | Intel / x64 | [DMG](https://github.com/mpakus/yo3mfs/releases/download/v1.5.0/yo3mfs-1.5.0-x86_64-apple-darwin.dmg) |
+| Windows | x64 | [Portable ZIP](https://github.com/mpakus/yo3mfs/releases/download/v1.5.0/yo3mfs-1.5.0-x86_64-pc-windows-msvc.zip) |
+| Linux | x64, built on Ubuntu 24.04 | [Portable tar.gz](https://github.com/mpakus/yo3mfs/releases/download/v1.5.0/yo3mfs-1.5.0-x86_64-unknown-linux-gnu.tar.gz) |
 
-[SHA-256 checksums](https://github.com/mpakus/yo3mfs/releases/download/v1.3.1/SHA256SUMS) · [Release notes](docs/releases/v1.3.1.md) · [Latest release](https://github.com/mpakus/yo3mfs/releases/latest) · [All releases](https://github.com/mpakus/yo3mfs/releases)
+[SHA-256 checksums](https://github.com/mpakus/yo3mfs/releases/download/v1.5.0/SHA256SUMS) · [Release notes](docs/releases/v1.5.0.md) · [Latest release](https://github.com/mpakus/yo3mfs/releases/latest) · [All releases](https://github.com/mpakus/yo3mfs/releases)
 
 Version tags publish packages only after all four platforms pass their checks. Development builds remain available under [Actions](https://github.com/mpakus/yo3mfs/actions/workflows/ci.yml) for 14 days. Release assets are separate downloads and do not expire with Actions artifacts. See [build and release instructions](docs/GITHUB-ACTIONS.md).
 
-On macOS, open the DMG and copy `yo3mfs.app` to Applications. On Windows, extract the ZIP and run `yo3mfs.exe`. On Linux, extract the archive and run `./yo3mfs`. Packages are not signed for public distribution: macOS uses an ad-hoc signature without Developer ID/notarization; Windows Authenticode signing is not configured. Linux archives do not bundle system libraries.
+On macOS, open the DMG and copy `yo3mfs.app` to Applications. On Windows, extract the ZIP and run `yo3mfs.exe`. On Linux, extract the archive and run `./yo3mfs`. Development macOS packages are ad-hoc signed; tagged 1.5.0 macOS packages must pass Developer ID signing and notarization before publication. Windows Authenticode signing is not configured. Linux archives do not bundle system libraries.
 
 ### macOS first launch
 
@@ -38,15 +38,31 @@ Version 1.3.1 is not notarized, so macOS may block it with an alert that Apple c
 
 See [Apple's instructions](https://support.apple.com/en-us/102445). This approves the current app locally; it does not notarize the release. Removing this verification warning for other users requires a future build signed with Developer ID and notarized by Apple.
 
-The next macOS release workflow now includes [Developer ID signing and notarization](docs/MACOS-SIGNING.md), adapted from GitRonimo. It requires signing credentials and a successful new tagged build; the v1.3.1 downloads above remain unchanged.
+The next macOS release workflow now includes [Developer ID signing and notarization](docs/MACOS-SIGNING.md), adapted from GitRonimo. It requires signing credentials and a successful new tagged build; published v1.3.1 downloads remain unchanged.
 
 ### Run from source
 
-To run from source, install Rust/rustup and your platform's build tools:
+To run from source, install Rust/rustup and your platform's build tools.
+
+On macOS/Linux, [bin/test.dev](bin/test.dev) builds and launches the optimized desktop app using the pinned toolchain and lockfile:
+
+```bash
+bin/test.dev
+bin/test.dev "tests/fixtures/sample-box.step"
+```
+
+It forwards app arguments, including `--help` and `--version`. You can invoke the script by its path from another directory; relative model paths are resolved from that directory. The script requires Cargo, but not RTK, and does not run the test suite or create a package.
+
+Equivalent Cargo commands, also usable directly on Windows:
 
 ```bash
 cargo run --locked --release
 cargo run --locked --release -- "/path/to/model.3mf"
+cargo run --locked --release -- "/path/to/model.stl"
+cargo run --locked --release -- "/path/to/model.step"
+cargo run --locked --release -- "/path/to/model.obj"
+cargo run --locked --release -- "/path/to/model.glb"
+cargo run --locked --release -- "/path/to/model.ply"
 ```
 
 Rust **1.97.1** is pinned in `rust-toolchain.toml`; the project uses edition 2024. Use the project's own `tests/fixtures/sample.3mf` for a quick check.
@@ -54,8 +70,11 @@ Rust **1.97.1** is pinned in `rust-toolchain.toml`; the project uses edition 202
 ## Features
 
 - A compact text menu: YO3MFS / File / View / Help, with keyboard shortcuts.
-- A system file picker, single-file drag-and-drop, and a command-line file argument.
-- GPU rendering of meshes, multiple objects, shared instances, and nested components.
+- A system file picker, single-file drag-and-drop, and a command-line file argument for 3MF, STL, STEP, OBJ, glTF/GLB, and PLY.
+- ASCII and binary STL geometry, including binary headers starting with `solid` and multi-solid ASCII files.
+- STEP/STP previews of embedded CAD surfaces and assembly placements, converted to millimeters and tessellated locally.
+- OBJ polygon meshes, ASCII/binary PLY meshes, and self-contained glTF/GLB scenes with base and vertex colors.
+- GPU rendering of meshes, multiple objects, shared instances, and nested 3MF components.
 - Bambu filament colors, object/part assignments, and paint boundaries inside triangles.
 - Materials → Project colors / Neutral, a numbered project palette, and a saved display mode.
 - Full rotation, zoom, pan, and seven standard views.
@@ -64,17 +83,23 @@ Rust **1.97.1** is pinned in `rust-toolchain.toml`; the project uses edition 202
 - English by default; the Russian option in Settings applies immediately and is saved.
 - A graphite inspector with Model, Materials, Camera, Appearance, and Settings sections.
 - YO3MFS → About, including [Made in Austin ✩ Texas](https://aomega.co/). Help contains Controls only.
-- X/Y/Z dimensions in millimeters, instance counts, and original triangle counts.
+- X/Y/Z dimensions in millimeters, instance counts, and triangle counts (tessellated preview triangles for STEP).
 - Background loading with stages and cancellation; a failed new load preserves the previous scene.
 - Core 3MF, external Production parts, and basic Bambu part roles and plate selection.
 
-The viewer works locally and never edits or uploads a 3MF. It does not slice, print, edit geometry, or export models. The application is written in Rust with a WGSL shader; it has no WebView or JavaScript frontend.
+The viewer works locally and never edits or uploads a model. It does not slice, print, edit geometry, or export models. The application is written in Rust with a WGSL shader; it has no WebView or JavaScript frontend.
 
 ## Compatibility
 
+OBJ supports polygon faces and relative/slash indices. PLY supports ASCII and both binary byte orders, with RGB vertex colors. glTF/GLB supports embedded geometry, shared instances, nested transforms, base colors, and vertex colors; meters/Y-up are converted to millimeters/Z-up. These are static previews: textures, animation, skins/morphs, and point clouds are outside the profile. OBJ/PLY use millimeters with a notice. External references remain unopened; glTF files requiring a separate `.bin` must be exported as self-contained GLB or embedded glTF. See [supported mesh features and limits](docs/MESH-FORMATS.md).
+
+STEP/STP accepts classic uncompressed Part 21 files. Curved surfaces are tessellated into a neutral mesh, and assembly placements are retained in one combined preview. Colors, names, PMI, external files, and editable CAD topology are not loaded. Persistent notes disclose OCCT normalization/healing and possible unsupported-entity omissions; full root transfer cannot be verified. The first STEP load initializes the CAD engine in the background. See the [STEP profile, limits, and dependency notices](docs/STEP.md).
+
+STL is shown as one neutral mesh in its original coordinates; multiple ASCII solids remain together. Since STL has no unit metadata, coordinates are interpreted as millimeters with a persistent notice. Stored normals are validated, while shading uses vertex winding. Nonstandard binary color/attribute data is ignored with a warning. Empty, malformed, truncated, nonfinite, and over-budget files are rejected; degenerate triangles are skipped with a count. STL does not provide Bambu painting, instances, or plates. Synthetic STL fixtures and remaining exporter/platform checks are recorded in [validation](docs/VALIDATION.md).
+
 Supported geometry includes meshes, build instances, component transforms, all six Core length units, and Production Extension references. Recognized Bambu plates can be selected, and helper parts are excluded with a warning. Unknown required extensions are rejected. Bambu colors and painting are displayed within the [documented profile](docs/BAMBU-COLORS.md).
 
-Textures, standard Core/Materials color resources, physical AMS slots, multicolor filament effects, and print settings are not reproduced. Invalid optional painting falls back to a base material with a warning. Overlapping parts are rendered without a slicer's Boolean operations; coincident surfaces may show color flicker. A painting brush and export are not included in 1.3.
+Textures, standard Core/Materials color resources, physical AMS slots, multicolor filament effects, and print settings are not reproduced. Invalid optional painting falls back to a base material with a warning. Overlapping parts are rendered without a slicer's Boolean operations; coincident surfaces may show color flicker. A painting brush and export remain outside the viewer.
 
 Five public files have been checked: two from the official Bambu Studio repository and three issue attachments. Their recorded exporter versions are **01.07.03.04, 01.07.03.50, 01.10.02.76, and 02.04.00.70**; one file has no exporter version. The corpus covers external model parts, part assignments, whole painted faces, and face subdivisions. This does not establish compatibility with every export from those or newer versions. Sources, SHA-256 hashes, and expected geometry are recorded in [external.json](tests/fixtures/external.json). External models are not bundled.
 
@@ -123,18 +148,20 @@ python3 scripts/generate_benchmark.py
 cargo run --locked --release --no-default-features --example inspect -- target/benchmark.3mf
 ```
 
-ZIP/XML are streamed with limits, without extracting files or fetching external URIs. Settings are written atomically to the OS-specific user configuration directory. Format and memory limits are described in [SPEC.md](SPEC.md).
+OBJ text is streamed with bounded lines; PLY and glTF use bounded buffers with allocation accounting. ZIP/XML and STL are streamed with limits; STEP is read within a 64 MiB cap and converted in a memory-limited WebAssembly sandbox, without extracting files or fetching external URIs. Settings are written atomically to the OS-specific user configuration directory. Format and memory limits are described in [SPEC.md](SPEC.md).
 
 ## Documentation
 
 - [SPEC.md](SPEC.md) — requirements, architecture, limits, and acceptance criteria.
 - [AGENTS.md](AGENTS.md) — development rules, including English documentation and both UI dictionaries.
 - [GitHub Actions](docs/GITHUB-ACTIONS.md) — runners, build artifacts, version tags, and release publishing.
+- [OBJ, PLY, and glTF/GLB](docs/MESH-FORMATS.md) — supported static mesh features, limits, and notices.
+- [STEP preview](docs/STEP.md) — CAD conversion, limitations, sandbox, and replaceable kernel.
 - [Bambu colors](docs/BAMBU-COLORS.md) — painting format and compatibility profile.
 - [Validation](docs/VALIDATION.md) — evidence and remaining checks.
 - [Implementation plan](tasks/plan.md) and [task status](tasks/todo.md).
 
-YO3MFS is independent and is not an official Bambu Lab product. A project license has not yet been selected; publishing downloads does not grant an open-source license. License selection and dependency-license review remain outstanding. Private user models are never added to the repository automatically.
+YO3MFS is independent and is not an official Bambu Lab product. A project license has not yet been selected; publishing downloads does not grant an open-source license. License selection and a full dependency-license review remain outstanding. Packages include [model-import dependency notices](THIRD-PARTY-NOTICES.txt); the embedded OCCT kernel retains its LGPL terms and can be replaced. Private user models are never added to the repository automatically.
 
 ## Logo and icons
 
@@ -150,4 +177,4 @@ install -Dm644 share/applications/com.yo3mfs.viewer.desktop "$HOME/.local/share/
 install -Dm644 share/icons/hicolor/512x512/apps/com.yo3mfs.viewer.png "$HOME/.local/share/icons/hicolor/512x512/apps/com.yo3mfs.viewer.png"
 ```
 
-`$HOME/.local/bin` must be in the graphical session's PATH. The app ID matches the desktop entry so Wayland can associate the window with its icon. Installation does not change 3MF file associations. Native Linux verification remains part of platform acceptance.
+`$HOME/.local/bin` must be in the graphical session's PATH. The app ID matches the desktop entry so Wayland can associate the window with its icon. Installation does not change 3MF, STL, or STEP file associations. Native Linux verification remains part of platform acceptance.

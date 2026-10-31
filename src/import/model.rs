@@ -183,6 +183,7 @@ impl<'a> Parser<'a> {
                     vertices: vec![],
                     triangles: vec![],
                     painting: vec![],
+                    colors: vec![],
                 });
             }
             (["model", "resources", "object", "mesh", "vertices", "vertex"], false) => {

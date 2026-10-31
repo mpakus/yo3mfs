@@ -6,7 +6,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let path = std::env::args_os()
         .nth(1)
         .map(PathBuf::from)
-        .ok_or("usage: cargo run --release --example inspect -- model.3mf")?;
+        .ok_or("usage: cargo run --release --example inspect -- model.3mf|model.stl|model.step")?;
     let start = Instant::now();
     let scene = load(&path, &Limits::default(), &AtomicBool::new(false))?;
     let imported = start.elapsed();

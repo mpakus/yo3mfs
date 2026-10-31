@@ -2,6 +2,88 @@ use super::Key;
 
 pub(super) const fn get(key: Key) -> &'static str {
     match key {
+        Key::EmbeddedColors => {
+            "Embedded mesh colors are displayed. This model has no filament palette."
+        }
+        Key::InvalidModel => "Invalid model: {0}",
+        Key::InvalidObj => "Invalid OBJ: {0}",
+        Key::InvalidPly => "Invalid PLY: {0}",
+        Key::InvalidGltf => "Invalid glTF/GLB: {0}",
+        Key::MeshSyntax => "Malformed or incomplete mesh data.",
+        Key::MeshPolygon => {
+            "A face is degenerate, nonplanar, self-intersecting, or cannot be triangulated."
+        }
+        Key::MeshLineSize => "mesh text line length (64 KiB maximum)",
+        Key::MeshFaceSize => "polygon vertex count (1,024 maximum)",
+        Key::MeshUnitsWarning => {
+            "This format has no reliable unit metadata. Coordinates are interpreted as millimeters."
+        }
+        Key::ObjMaterialsWarning => {
+            "OBJ materials and textures are not loaded; external MTL files are never opened. Embedded vertex colors are displayed when present."
+        }
+        Key::MeshAttributesWarning => {
+            "Additional attributes, stored normals, or non-surface data are not rendered. Shading uses face geometry."
+        }
+        Key::MeshUnsupported => {
+            "This geometry feature is not supported by the static mesh preview. Export a polygon mesh instead."
+        }
+        Key::PlyPoints => {
+            "PLY contains points without faces. Export a surface mesh to view this file."
+        }
+        Key::GltfExternal => {
+            "External glTF buffers are not opened. Export a self-contained GLB or glTF with embedded buffers."
+        }
+        Key::GltfPreviewWarning => {
+            "Static glTF preview: base colors are shown with simple lighting. Textures, transparency, PBR effects, cameras, and animation are not reproduced."
+        }
+        Key::GltfSceneWarning => {
+            "Only the default scene (or the first scene when no default is set) is displayed."
+        }
+        Key::GltfDeformation => {
+            "Skins and morph targets are not supported. Export a static mesh with deformation applied."
+        }
+        Key::GltfInputSize => {
+            "glTF input or decoded buffer size (64 MiB maximum; JSON 16 MiB maximum)"
+        }
+        Key::GltfStructure => "Invalid glTF scene, buffer, accessor, or transform.",
+        Key::GltfExtensionsWarning => {
+            "Optional glTF extensions are not applied; the core mesh preview may differ."
+        }
+
+        Key::StepFaces => "STEP face count (100,000 maximum)",
+        Key::StepKernelSize => "The replacement STEP kernel exceeds 32 MiB.",
+        Key::StepKernelTrap => "The STEP CAD engine stopped unexpectedly. Try another model.",
+        Key::InvalidStep => "Invalid STEP: {0}",
+        Key::StepFormat => {
+            "Expected a complete STEP Part 21 file (.step or .stp). Compressed STEP and external model files are not supported."
+        }
+        Key::StepInputSize => "STEP input size (64 MiB maximum)",
+        Key::StepMemory => "STEP conversion memory",
+        Key::StepTimeout => "STEP conversion exceeded its 60-second time limit.",
+        Key::StepKernel => "STEP CAD engine failed: {0}",
+        Key::StepIncomplete => "STEP contains missing, ambiguous, invalid, or untessellated faces.",
+        Key::StepPreviewWarning => {
+            "STEP preview: curved surfaces are tessellated in millimeters and assemblies are combined. Colors, names, PMI, and external files are not loaded."
+        }
+        Key::StepConversionWarning => {
+            "The CAD engine may normalize or heal STEP topology and omit unsupported entities. Complete root transfer cannot be verified; compare this preview with the source CAD model."
+        }
+        Key::InvalidStl => "Invalid STL: {0}",
+        Key::StlFormat => {
+            "Expected ASCII STL or binary STL with a matching facet count. Open a 3MF, STL, STEP, OBJ, glTF/GLB, or PLY model."
+        }
+        Key::StlLength => "Binary STL is truncated or has data beyond its declared facet count.",
+        Key::StlSyntax => "Malformed ASCII STL near line {0}.",
+        Key::StlNumber => "STL normals and coordinates must be finite numbers.",
+        Key::StlLineSize => "STL line length",
+        Key::InputSize => "input file size",
+        Key::StlUnitsWarning => "STL has no units. Coordinates are interpreted as millimeters.",
+        Key::StlAttributesWarning => {
+            "STL color or attribute data is not applied. Geometry is shown in a neutral material."
+        }
+        Key::CliHelp => {
+            "yo3mfs {0}\nUsage: yo3mfs [path/to/model.3mf | path/to/model.stl | path/to/model.step | path/to/model.obj | path/to/model.glb | path/to/model.gltf | path/to/model.ply]\nOffline 3MF, STL, STEP, OBJ, glTF/GLB, and PLY viewer. Input files are never modified."
+        }
         Key::BadPaint => "Invalid Bambu facet paint",
         Key::PaintDepth => "paint subdivision depth",
         Key::ProjectSettingsSize => "project color settings size",
@@ -30,7 +112,7 @@ pub(super) const fn get(key: Key) -> &'static str {
         Key::Projection => "Projection",
 
         Key::File => "File",
-        Key::Open => "Open 3MF",
+        Key::Open => "Open model",
         Key::OpenMenu => "Open…",
         Key::CloseWindow => "Close window",
         Key::Fit => "Fit all",
@@ -48,7 +130,9 @@ pub(super) const fn get(key: Key) -> &'static str {
         Key::Language => "Interface language",
         Key::LanguageHint => "Changes apply immediately and are saved for next time.",
         Key::NoModel => "No model open",
-        Key::NoModelHint => "Open a 3MF to inspect its geometry and dimensions.",
+        Key::NoModelHint => {
+            "Open a 3MF, STL, STEP, OBJ, glTF/GLB, or PLY to inspect its geometry and dimensions."
+        }
         Key::Dimensions => "Dimensions · mm",
         Key::Instances => "Instances",
         Key::Triangles => "Triangles",
@@ -79,8 +163,8 @@ pub(super) const fn get(key: Key) -> &'static str {
         Key::AutoSaved => "Saved automatically",
         Key::ImportNotes => "IMPORT NOTES",
         Key::EmptyTitle => "Every angle. Every detail.",
-        Key::EmptyHint => "Drop a 3MF here or choose a file",
-        Key::DropHint => "Release to open 3MF",
+        Key::EmptyHint => "Drop a 3MF, STL, STEP, OBJ, glTF/GLB, or PLY here or choose a file",
+        Key::DropHint => "Release to open a 3D model",
         Key::Cancel => "Cancel",
         Key::Close => "Dismiss",
         Key::OtherFile => "Choose another file",
@@ -98,14 +182,14 @@ pub(super) const fn get(key: Key) -> &'static str {
         Key::HelpEscape => "Esc — close a dialog or cancel loading",
         Key::About => "About",
         Key::AboutDescription => {
-            "A focused 3MF viewer. Inspect geometry, explore every angle, and keep your files untouched."
+            "A focused 3MF, STL, STEP, OBJ, glTF/GLB, and PLY viewer. Inspect geometry, explore every angle, and keep your files untouched."
         }
         Key::AboutIndependent => "Independent software. Not affiliated with Bambu Lab.",
         Key::AboutVersion => "Version {0}",
         Key::MadeInAustin => "Made in Austin ✩ Texas",
-        Key::OneFile => "Open one 3MF file at a time.",
-        Key::FileFilter => "3MF model",
-        Key::ReadArchive => "Reading archive…",
+        Key::OneFile => "Open one 3MF, STL, STEP, OBJ, glTF/GLB, or PLY file at a time.",
+        Key::FileFilter => "3MF, STL, STEP, OBJ, glTF/GLB, and PLY models",
+        Key::ReadArchive => "Reading file…",
         Key::ParseModel => "Parsing model…",
         Key::PrepareScene => "Preparing scene…",
         Key::WaitLoad => "Waiting to load…",
@@ -119,7 +203,7 @@ pub(super) const fn get(key: Key) -> &'static str {
         Key::GpuLost => "Lost connection to the GPU: {0}",
         Key::GpuError => "GPU error: {0}",
         Key::GpuTitle => "yo3mfs — GPU error",
-        Key::GpuRestart => "{0}\nRestart the app. Your original 3MF has not been changed.",
+        Key::GpuRestart => "{0}\nRestart the app. Your original file has not been changed.",
         Key::GpuUpload => "Could not create GPU buffers: {0}",
         Key::GpuMemory => "GPU memory limit exceeded.",
         Key::GpuBuffer => "The model exceeds this GPU's buffer size limit.",

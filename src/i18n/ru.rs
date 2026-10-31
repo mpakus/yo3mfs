@@ -2,6 +2,92 @@ use super::Key;
 
 pub(super) const fn get(key: Key) -> &'static str {
     match key {
+        Key::EmbeddedColors => {
+            "Показаны встроенные цвета сетки. Палитры филаментов в этой модели нет."
+        }
+        Key::InvalidModel => "Некорректная модель: {0}",
+        Key::InvalidObj => "Некорректный OBJ: {0}",
+        Key::InvalidPly => "Некорректный PLY: {0}",
+        Key::InvalidGltf => "Некорректный glTF/GLB: {0}",
+        Key::MeshSyntax => "Некорректные или неполные данные сетки.",
+        Key::MeshPolygon => {
+            "Грань вырождена, не лежит в одной плоскости, пересекает себя или не может быть разбита на треугольники."
+        }
+        Key::MeshLineSize => "длина строки сетки (не более 64 КиБ)",
+        Key::MeshFaceSize => "число вершин многоугольника (не более 1 024)",
+        Key::MeshUnitsWarning => {
+            "В этом формате нет надёжных данных о единицах измерения. Координаты интерпретируются в миллиметрах."
+        }
+        Key::ObjMaterialsWarning => {
+            "Материалы и текстуры OBJ не загружаются; внешние файлы MTL не открываются. Встроенные цвета вершин отображаются при наличии."
+        }
+        Key::MeshAttributesWarning => {
+            "Дополнительные атрибуты, сохранённые нормали и данные вне поверхности не отображаются. Освещение рассчитывается по геометрии граней."
+        }
+        Key::MeshUnsupported => {
+            "Эта геометрия не поддерживается статическим просмотром сетки. Экспортируйте полигональную сетку."
+        }
+        Key::PlyPoints => {
+            "PLY содержит точки без граней. Для просмотра экспортируйте сетку поверхности."
+        }
+        Key::GltfExternal => {
+            "Внешние буферы glTF не открываются. Экспортируйте самодостаточный GLB или glTF со встроенными буферами."
+        }
+        Key::GltfPreviewWarning => {
+            "Статический просмотр glTF: базовые цвета показаны с простым освещением. Текстуры, прозрачность, эффекты PBR, камеры и анимация не воспроизводятся."
+        }
+        Key::GltfSceneWarning => {
+            "Показана только сцена по умолчанию (или первая сцена, если сцена по умолчанию не задана)."
+        }
+        Key::GltfDeformation => {
+            "Скелетная деформация и морфинг не поддерживаются. Экспортируйте статическую сетку с применённой деформацией."
+        }
+        Key::GltfInputSize => {
+            "размер glTF или декодированных буферов (не более 64 МиБ; JSON — 16 МиБ)"
+        }
+        Key::GltfStructure => "Некорректная сцена, буфер, аксессор или преобразование glTF.",
+        Key::GltfExtensionsWarning => {
+            "Необязательные расширения glTF не применяются; базовый просмотр сетки может отличаться."
+        }
+
+        Key::StepFaces => "число граней STEP (не более 100 000)",
+        Key::StepKernelSize => "Размер заменяющего ядра STEP превышает 32 МиБ.",
+        Key::StepKernelTrap => "CAD-ядро STEP неожиданно остановилось. Попробуйте другую модель.",
+        Key::InvalidStep => "Некорректный STEP: {0}",
+        Key::StepFormat => {
+            "Ожидался полный файл STEP Part 21 (.step или .stp). Сжатый STEP и внешние файлы моделей не поддерживаются."
+        }
+        Key::StepInputSize => "размер файла STEP (не более 64 МиБ)",
+        Key::StepMemory => "память для преобразования STEP",
+        Key::StepTimeout => "Преобразование STEP превысило ограничение в 60 секунд.",
+        Key::StepKernel => "Ошибка CAD-ядра STEP: {0}",
+        Key::StepIncomplete => {
+            "STEP содержит отсутствующие, неоднозначные, некорректные или неразбитые на треугольники грани."
+        }
+        Key::StepPreviewWarning => {
+            "Предпросмотр STEP: криволинейные поверхности разбиты на треугольники в миллиметрах, сборки объединены. Цвета, имена, PMI и внешние файлы не загружаются."
+        }
+        Key::StepConversionWarning => {
+            "CAD-ядро может нормализовать или исправлять топологию STEP и пропускать неподдерживаемые элементы. Полноту переноса корневых объектов проверить нельзя; сравните результат с исходной CAD-моделью."
+        }
+        Key::InvalidStl => "Некорректный STL: {0}",
+        Key::StlFormat => {
+            "Ожидался текстовый STL или двоичный STL с корректным числом граней. Откройте модель 3MF, STL, STEP, OBJ, glTF/GLB или PLY."
+        }
+        Key::StlLength => "Двоичный STL обрезан или содержит данные сверх указанного числа граней.",
+        Key::StlSyntax => "Ошибка структуры текстового STL около строки {0}.",
+        Key::StlNumber => "Нормали и координаты STL должны быть конечными числами.",
+        Key::StlLineSize => "длина строки STL",
+        Key::InputSize => "размер входного файла",
+        Key::StlUnitsWarning => {
+            "STL не содержит единиц измерения. Координаты интерпретируются в миллиметрах."
+        }
+        Key::StlAttributesWarning => {
+            "Цвета и атрибуты STL не применены. Геометрия показана нейтральным материалом."
+        }
+        Key::CliHelp => {
+            "yo3mfs {0}\nИспользование: yo3mfs [path/to/model.3mf | path/to/model.stl | path/to/model.step | path/to/model.obj | path/to/model.glb | path/to/model.gltf | path/to/model.ply]\nАвтономный просмотрщик 3MF, STL, STEP, OBJ, glTF/GLB и PLY. Исходные файлы не изменяются."
+        }
         Key::BadPaint => "Некорректная раскраска грани Bambu",
         Key::PaintDepth => "глубина разбиения раскраски",
         Key::ProjectSettingsSize => "размер настроек цветов проекта",
@@ -30,7 +116,7 @@ pub(super) const fn get(key: Key) -> &'static str {
         Key::Projection => "Проекция",
 
         Key::File => "Файл",
-        Key::Open => "Открыть 3MF",
+        Key::Open => "Открыть модель",
         Key::OpenMenu => "Открыть…",
         Key::CloseWindow => "Закрыть окно",
         Key::Fit => "Показать всё",
@@ -48,7 +134,9 @@ pub(super) const fn get(key: Key) -> &'static str {
         Key::Language => "Язык интерфейса",
         Key::LanguageHint => "Изменения применяются сразу и сохраняются для следующего запуска.",
         Key::NoModel => "Модель не открыта",
-        Key::NoModelHint => "Откройте 3MF для просмотра геометрии и размеров.",
+        Key::NoModelHint => {
+            "Откройте 3MF, STL, STEP, OBJ, glTF/GLB или PLY для просмотра геометрии и размеров."
+        }
         Key::Dimensions => "Размеры · мм",
         Key::Instances => "Экземпляры",
         Key::Triangles => "Треугольники",
@@ -79,8 +167,10 @@ pub(super) const fn get(key: Key) -> &'static str {
         Key::AutoSaved => "Сохраняется автоматически",
         Key::ImportNotes => "ОСОБЕННОСТИ ФАЙЛА",
         Key::EmptyTitle => "Каждый ракурс. Каждая деталь.",
-        Key::EmptyHint => "Перетащите сюда 3MF или выберите файл",
-        Key::DropHint => "Отпустите, чтобы открыть 3MF",
+        Key::EmptyHint => {
+            "Перетащите сюда 3MF, STL, STEP, OBJ, glTF/GLB или PLY либо выберите файл"
+        }
+        Key::DropHint => "Отпустите, чтобы открыть 3D-модель",
         Key::Cancel => "Отмена",
         Key::Close => "Закрыть",
         Key::OtherFile => "Другой файл",
@@ -98,14 +188,14 @@ pub(super) const fn get(key: Key) -> &'static str {
         Key::HelpEscape => "Esc — закрыть диалог или отменить загрузку",
         Key::About => "О приложении",
         Key::AboutDescription => {
-            "Просмотрщик 3MF. Изучайте геометрию и ракурсы, сохраняя исходные файлы неизменными."
+            "Просмотрщик 3MF, STL, STEP, OBJ, glTF/GLB и PLY. Изучайте геометрию и ракурсы, сохраняя исходные файлы неизменными."
         }
         Key::AboutIndependent => "Независимое приложение. Не связано с Bambu Lab.",
         Key::AboutVersion => "Версия {0}",
         Key::MadeInAustin => "Made in Austin ✩ Texas",
-        Key::OneFile => "Откройте один 3MF-файл.",
-        Key::FileFilter => "Модель 3MF",
-        Key::ReadArchive => "Чтение архива…",
+        Key::OneFile => "Откройте один файл 3MF, STL, STEP, OBJ, glTF/GLB или PLY.",
+        Key::FileFilter => "Модели 3MF, STL, STEP, OBJ, glTF/GLB и PLY",
+        Key::ReadArchive => "Чтение файла…",
         Key::ParseModel => "Разбор модели…",
         Key::PrepareScene => "Подготовка сцены…",
         Key::WaitLoad => "Ожидание загрузки…",
@@ -123,7 +213,7 @@ pub(super) const fn get(key: Key) -> &'static str {
         Key::GpuLost => "Потеряно соединение с GPU: {0}",
         Key::GpuError => "Ошибка GPU: {0}",
         Key::GpuTitle => "yo3mfs — ошибка GPU",
-        Key::GpuRestart => "{0}\nПерезапустите приложение. Исходный 3MF не изменён.",
+        Key::GpuRestart => "{0}\nПерезапустите приложение. Исходный файл не изменён.",
         Key::GpuUpload => "Не удалось создать GPU-буферы: {0}",
         Key::GpuMemory => "Превышен лимит GPU памяти.",
         Key::GpuBuffer => "Модель превышает размер буфера этого GPU.",

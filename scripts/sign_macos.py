@@ -124,7 +124,8 @@ def sign_package(output, config, credentials_dir):
         raise ValueError('Missing packaged application')
     with signing_credentials(config, credentials_dir) as (keychain, authentication):
         signing = ['--sign', config['DEVELOPER_ID_APPLICATION'], '--keychain', str(keychain), '--timestamp']
-        run(['codesign', '--force', '--options', 'runtime', *signing, str(bundle)], 'Sign application', config)
+        run(['codesign', '--force', '--options', 'runtime', '--entitlements',
+             str(ROOT / 'assets/macos/entitlements.plist'), *signing, str(bundle)], 'Sign application', config)
         run(['codesign', '--verify', '--deep', '--strict', str(bundle)], 'Verify application signature', config)
         run(['hdiutil', 'create', '-volname', 'YO3MFS', '-srcfolder', str(bundle),
              '-ov', '-format', 'UDZO', str(dmg)], 'Rebuild signed DMG', config)

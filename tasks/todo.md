@@ -1,4 +1,4 @@
-# Version 1 tasks
+# YO3MFS tasks
 
 - [x] T1. Cargo + scene: separate meshes/instances and bounds; verify core unit tests.
 - [x] T2. Import: ZIP/OPC/XML, units/transforms/components; verify synthetic integration fixtures.
@@ -12,6 +12,22 @@
 All eight implementation stages are complete. This does not close full platform acceptance AC-01…AC-12; evidence and limitations are in the [validation report](../docs/VALIDATION.md).
 
 Checks on unavailable operating systems and the owner's licensing decision remain separate from implementation and are not replaced by assumptions.
+
+## Version 1.4.0 — STL and STEP
+
+- [x] Bounded ASCII/binary STL import through the existing loader, picker, drop handler, and file argument.
+- [x] Original coordinates/winding, millimeter notice, neutral material, and warnings for unsupported binary attributes.
+- [x] EN/RU copy, synthetic fixtures with hashes, numeric geometry checks, negative inputs, limits, and cancellation tests.
+- [x] Local desktop/core tests, Clippy, formatting, release build, macOS package verification, picker/startup/error-retention GUI checks, and documentation.
+- [ ] Real exporter corpus and native STL acceptance on Intel Mac, Windows, and Linux X11/Wayland; physical drag-and-drop.
+- [x] Prepare version 1.4.0 in Cargo files, README download targets, and release notes; published v1.3.1 packages remain 3MF-only.
+- [x] STEP/STP CAD tessellation, source units/placements, double-precision recentering, neutral preview, and persistent conversion notes.
+- [x] Bounded WASM memory, epoch cancellation/deadline, face-coverage checks, replacement-kernel support, and package license notices.
+- [x] Complete automated STEP checks, local package verification, and hardened macOS runtime inspection; record results in validation.
+- [x] STEP native Apple Silicon window/picker/startup rendering, camera controls, persistent EN/RU notes, picker cancellation, and error-retention checks after the Mac was unlocked.
+- [ ] STEP physical drag-and-drop and actual CAD-conversion cancellation in the UI; native Intel/Windows/Linux acceptance.
+- [ ] Native four-target CI, broader CAD exporter corpus, and release distribution/license/signing acceptance.
+- [ ] Publish the combined 1.5.0 release only through the owner-authorized reviewed version tag (1.4.0 was not published).
 
 ## Version 1.3 — Bambu colors
 
@@ -43,4 +59,19 @@ Remaining limits: coincident surfaces in intersecting parts may flicker; slicer 
 - [x] Inspect GitRonimo, Cuckoding, and KickstandMoto configuration and adapt the applicable Developer ID/notarization workflow.
 - [x] Require signing, notarization, stapling, Gatekeeper checks, and credential cleanup for tagged macOS builds; add negative regression tests.
 - [ ] Configure the original signing credentials as YO3MFS repository secrets.
-- [ ] Publish a new patch version with signed Apple Silicon/Intel DMGs and verify downloaded Gatekeeper acceptance.
+- [ ] Publish a new version with signed Apple Silicon/Intel DMGs and verify downloaded Gatekeeper acceptance.
+
+## OBJ, glTF/GLB, and PLY — October 31, 2026
+
+- [x] Add bounded static importers, scene/color integration, EN/RU messages, and all opening paths.
+- [x] Add reproducible geometry fixtures, numeric and malformed-input regressions, and dependency notices.
+- [ ] Complete independent exporter and native macOS Intel/Windows/Linux X11/Wayland acceptance; see docs/VALIDATION.md.
+
+## Version 1.5.0 — native checks and release preparation
+
+- [x] Native macOS picker/rendering for all three PLY encodings, embedded glTF, and GLB; expected counts/dimensions and persistent notes.
+- [x] Native failed-load scene retention for malformed PLY, external-buffer glTF, and truncated GLB; successful recovery through Choose another file.
+- [ ] Physical Finder drag-and-drop confirmation (automation did not deliver cross-window drops).
+- [x] Synchronize version 1.5.0, download targets, notices, format documentation, and release notes.
+- [x] Prepare the reviewed 1.5.0 source, final local tests/build, and verified macOS development DMG for the requested commit/tag push.
+- [ ] Configure the missing macOS signing secrets, complete the four-target workflow, and verify release downloads.

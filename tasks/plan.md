@@ -1,8 +1,14 @@
-# Version 1 implementation plan
+# YO3MFS implementation plan
 
 Request dated October 16, 2026: implement the application described by SPEC.md. Work proceeds in sequence, without publication or changes to source 3MF files.
 
-## Sequence
+## Version 1.4.0 extension — October 18, 2026
+
+The request adds STL, then STEP, updates all project Markdown, and increases the version. Keep the existing viewer stack and controls. Implement bounded ASCII/binary STL and a sandboxed STEP tessellation adapter; verify geometry/units/placements, rejection/limits/cancellation, localized notes, native opening paths, packaging notices, and hardened macOS runtime. Update Cargo versions and future release links together. No commit, tag, or publication is implied by this implementation request.
+
+The STEP profile and known conversion limits are in [STEP.md](../docs/STEP.md). The sequence below is the completed original implementation history, not a new request to rebuild the app.
+
+## Original sequence
 
 1. Cargo project and testable scene/import contracts.
 2. Safe OPC/3MF reading, transforms, units, Production parts, and Bambu metadata.

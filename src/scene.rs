@@ -20,6 +20,8 @@ pub struct Mesh {
     pub vertices: Vec<DVec3>,
     pub triangles: Vec<[u32; 3]>,
     pub painting: Vec<FacetPaint>,
+    /// Packed sRGB colors per vertex, or empty for instance/default colors.
+    pub colors: Vec<u32>,
 }
 
 #[derive(Debug)]
@@ -110,6 +112,7 @@ impl Scene {
             .iter()
             .map(|m| {
                 m.vertices.capacity() * 24
+                    + m.colors.capacity() * 4
                     + m.triangles.capacity() * 12
                     + m.painting.capacity() * std::mem::size_of::<FacetPaint>()
                     + m.painting.iter().map(|p| p.code.capacity()).sum::<usize>()
@@ -143,6 +146,7 @@ mod tests {
                 vertices: vec![DVec3::ZERO, DVec3::ONE],
                 triangles: vec![[0, 1, 1]],
                 painting: vec![],
+                colors: vec![],
             }],
             instances: vec![Instance {
                 mesh: 0,

@@ -89,7 +89,7 @@ jobs:
       - name: Core tests without GUI
         run: cargo test --locked --target ${{ matrix.target }} --no-default-features
       - name: Release build
-        run: cargo build --locked --release --target ${{ matrix.target }}
+        run: cargo build --locked --release --target ${{ matrix.target }} --bins --example inspect
       - name: CLI smoke test
         shell: python
         run: |
@@ -100,6 +100,19 @@ jobs:
           actual = subprocess.check_output([str(binary), '--version'], text=True).strip()
           assert actual == f'yo3mfs {version}', actual
           print(actual)
+      - name: Geometry smoke checks (including hardened macOS STEP runtime)
+        shell: python
+        run: |
+          import json, os, pathlib, subprocess
+          name = 'inspect.exe' if os.name == 'nt' else 'inspect'
+          binary = pathlib.Path('target') / os.environ['BUILD_TARGET'] / 'release/examples' / name
+          if os.environ['RUNNER_OS'] == 'macOS':
+              subprocess.run(['codesign', '--force', '--sign', '-', '--options', 'runtime',
+                              '--entitlements', 'assets/macos/entitlements.plist', str(binary)], check=True)
+          for name, triangles in [('sample.3mf', 24), ('sample-ascii.stl', 4), ('sample-binary.stl', 4), ('sample-box.step', 12), ('sample.obj', 4), ('sample-ascii.ply', 4), ('sample-little.ply', 4), ('sample-big.ply', 4), ('sample.gltf', 8), ('sample.glb', 8)]:
+              result = json.loads(subprocess.check_output([str(binary), f'tests/fixtures/{name}'], text=True))
+              assert result['triangles'] == triangles, result
+              print(name, result['size_mm'], result['triangles'])
       - name: macOS DMG
         if: runner.os == 'macOS'
         run: python scripts/package.py --target ${{ matrix.target }} --dmg --output-dir dist/package

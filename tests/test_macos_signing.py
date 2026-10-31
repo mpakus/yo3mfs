@@ -125,6 +125,8 @@ class MacSigningTests(unittest.TestCase):
         self.assertEqual((output / 'SHA256SUMS').read_text(), 'intermediate checksum')
         commands = [call.args[0] for call in run.call_args_list]
         self.assertIn('runtime', commands[0])
+        self.assertIn('--entitlements', commands[0])
+        self.assertIn(str(self.root / 'assets/macos/entitlements.plist'), commands[0])
         self.assertFalse(any('stapler' in c or 'spctl' in c for c in commands))
 
     @patch.object(signing, 'notarize', return_value='submission-1')

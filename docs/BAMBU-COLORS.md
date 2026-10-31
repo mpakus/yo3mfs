@@ -1,6 +1,8 @@
-# Bambu Studio colors in YO3MFS 1.3
+# Bambu Studio colors in YO3MFS 1.4
 
 The viewer displays the saved project palette, object/part filament assignments, and `paint_color`, including regions inside an original face. The source 3MF remains unchanged. This is a preview of saved painting, without a brush, new color assignments, or export.
+
+Version 1.4.0 retains the 1.3 painting contract for 3MF. STL and [STEP](STEP.md) are neutral geometry previews and do not infer Bambu colors, assignments, or plates. The material selector remains available for every format.
 
 ## Format references
 

@@ -16,6 +16,8 @@ Run `python3 scripts/build_icons.py` on macOS to regenerate sizes/containers: si
 
 The window receives IconData; logo/icon textures load once. The macOS bundle references ICNS through Info.plist. Windows resources use [winresource](https://docs.rs/winresource/latest/winresource/) with the Windows SDK; macOS cross-checks may set `RC_PATH` to llvm-rc. The Linux app ID matches its desktop entry: `com.yo3mfs.viewer`. README explains user-local desktop-entry/PNG installation; the application does not change system file associations.
 
+Version 1.4.0 adds STL and STEP support using the same approved graphics. The artwork, source prompts, app ID, icon containers, and embedded sizes are unchanged; format descriptions and package versions are updated separately.
+
 ## Prompt: icon
 
 Use case: background-extraction. Asset type: production desktop app icon PNG. Input image: approved YO3MFS brand board, edit target. Extract ONLY the large APP ICON on the right, faithfully preserving its exact graphite rounded square tile, subtle bevel, cube geometry and copper-peach Y mark. This is final production extraction, not a redesign: match the approved shape, proportions, colors and lighting. Remove all surrounding board, captions, other marks and shadows cast onto the board. Single centered front-facing square icon on genuinely transparent canvas. Square image, icon tile occupies about 88% of width and height with symmetrical transparent padding; do not crop its rounded corners. No wordmark, no labels, no additional elements. Preserve actual alpha transparency outside the tile, no simulated checkerboard.

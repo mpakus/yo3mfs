@@ -1,0 +1,30 @@
+solid tetrahedron
+  facet normal 0 0 0
+    outer loop
+      vertex -2 -3 -4
+      vertex -2 17 -4
+      vertex 8 -3 -4
+    endloop
+  endfacet
+  facet normal 0 0 0
+    outer loop
+      vertex -2 -3 -4
+      vertex 8 -3 -4
+      vertex -2 -3 26
+    endloop
+  endfacet
+  facet normal 0 0 0
+    outer loop
+      vertex -2 -3 -4
+      vertex -2 -3 26
+      vertex -2 17 -4
+    endloop
+  endfacet
+  facet normal 0 0 0
+    outer loop
+      vertex 8 -3 -4
+      vertex -2 17 -4
+      vertex -2 -3 26
+    endloop
+  endfacet
+endsolid tetrahedron

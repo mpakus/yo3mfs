@@ -1,0 +1,102 @@
+{
+  "asset": {
+    "version": "2.0",
+    "generator": "YO3MFS mesh fixture generator v1"
+  },
+  "buffers": [
+    {
+      "byteLength": 72,
+      "uri": "data:application/octet-stream;base64,bxIDu28Sg7umm0Q7bxIDPG8Sg7umm0Q7bxIDu28Sg7uWQ4u8bxIDu/T91Dymm0Q7AAACAAEAAAABAAMAAAADAAIAAQACAAMA"
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 48
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 48,
+      "byteLength": 24
+    }
+  ],
+  "accessors": [
+    {
+      "bufferView": 0,
+      "componentType": 5126,
+      "count": 4,
+      "type": "VEC3",
+      "min": [
+        -0.002,
+        -0.004,
+        -0.017
+      ],
+      "max": [
+        0.008,
+        0.026,
+        0.003
+      ]
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5123,
+      "count": 12,
+      "type": "SCALAR"
+    }
+  ],
+  "materials": [
+    {
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.8,
+          0.2,
+          0.05,
+          1
+        ]
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0
+          },
+          "indices": 1,
+          "material": 0
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "mesh": 0,
+      "name": "Original"
+    },
+    {
+      "translation": [
+        0.04,
+        0,
+        0
+      ],
+      "children": [
+        2
+      ]
+    },
+    {
+      "mesh": 0,
+      "name": "Translated instance"
+    }
+  ],
+  "scenes": [
+    {
+      "nodes": [
+        0,
+        1
+      ]
+    }
+  ],
+  "scene": 0
+}

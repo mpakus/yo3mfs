@@ -29,6 +29,7 @@ expected = f'{digest}  {package.name}\n'
 if (args.directory / 'SHA256SUMS').read_text(encoding='utf-8') != expected:
     raise SystemExit('Package checksum mismatch')
 
+notice_files = ['THIRD-PARTY-NOTICES.txt'] + [f'licenses/{p.name}' for p in (root / 'assets/licenses').iterdir() if p.is_file()]
 prefix = f'yo3mfs-{version}/'
 if package.suffix == '.dmg':
     if platform.system() != 'Darwin':
@@ -39,6 +40,8 @@ if package.suffix == '.dmg':
     assert info['CFBundleIconFile'] == 'yo3mfs.icns'
     assert (bundle / 'Contents/Resources/yo3mfs.icns').read_bytes() == (root / 'assets/branding/yo3mfs.icns').read_bytes()
     assert (bundle / 'Contents/Resources/NotoSansSymbols2-OFL.txt').is_file()
+    for name in notice_files:
+        assert (bundle / 'Contents/Resources' / name).is_file(), name
     subprocess.run(['codesign', '--verify', '--deep', '--strict', str(bundle)], check=True)
     subprocess.run(['hdiutil', 'verify', str(package)], check=True)
     if args.require_notarization:
@@ -46,6 +49,11 @@ if package.suffix == '.dmg':
                                  capture_output=True, text=True, check=True).stderr
         if 'Authority=Developer ID Application:' not in details or '(runtime)' not in details:
             raise SystemExit('Release requires Developer ID signing with hardened runtime')
+        entitlements = subprocess.run(['codesign', '--display', '--entitlements', '-', str(bundle)],
+                                       capture_output=True, check=True).stdout
+        required = plistlib.loads((root / 'assets/macos/entitlements.plist').read_bytes())
+        if plistlib.loads(entitlements) != required:
+            raise SystemExit('Release STEP runtime entitlements do not match the audited configuration')
         subprocess.run(['codesign', '--verify', '--strict', str(package)], check=True)
         subprocess.run(['xcrun', 'stapler', 'validate', str(package)], check=True)
         subprocess.run(['spctl', '--assess', '--type', 'open', '--context',
@@ -54,7 +62,7 @@ if package.suffix == '.dmg':
 elif package.suffix == '.zip':
     with zipfile.ZipFile(package) as archive:
         assert archive.testzip() is None
-        for name in ['yo3mfs.exe', 'yo3mfs.ico', 'README.md', 'NotoSansSymbols2-OFL.txt']:
+        for name in ['yo3mfs.exe', 'yo3mfs.ico', 'README.md', 'NotoSansSymbols2-OFL.txt'] + notice_files:
             assert archive.getinfo(prefix + name).file_size > 0, name
 else:
     with tarfile.open(package, 'r:gz') as archive:
@@ -62,7 +70,7 @@ else:
         assert binary.isfile() and binary.mode & 0o111, 'Linux binary is not executable'
         for name in ['README.md', 'NotoSansSymbols2-OFL.txt',
                      'share/applications/com.yo3mfs.viewer.desktop',
-                     'share/icons/hicolor/512x512/apps/com.yo3mfs.viewer.png']:
+                     'share/icons/hicolor/512x512/apps/com.yo3mfs.viewer.png'] + notice_files:
             member = archive.getmember(prefix + name)
             assert member.isfile() and member.size > 0, name
 print(f'Verified {package.name}: SHA-256 {digest}')

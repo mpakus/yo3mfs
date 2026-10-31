@@ -2,10 +2,10 @@
 Version=1.0
 Type=Application
 Name=YO3MFS
-GenericName=3MF Viewer
-GenericName[ru]=Просмотрщик 3MF
-Comment=Open and explore 3MF models
-Comment[ru]=Открывайте и рассматривайте модели 3MF
+GenericName=3MF, STL, STEP, OBJ, glTF/GLB, and PLY Viewer
+GenericName[ru]=Просмотрщик 3MF, STL, STEP, OBJ, glTF/GLB и PLY
+Comment=Open and explore 3MF, STL, STEP, OBJ, glTF/GLB, and PLY models
+Comment[ru]=Открывайте и рассматривайте модели 3MF, STL, STEP, OBJ, glTF/GLB и PLY
 Exec=yo3mfs %f
 Icon=com.yo3mfs.viewer
 Terminal=false

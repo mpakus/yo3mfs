@@ -4,9 +4,9 @@
 
 ## Context
 
-`yo3mfs` is an offline Rust 3MF viewer for macOS, Linux, and Windows, focused on Bambu Studio projects. The main workflow is to open or drop a file, inspect its geometry from every side, zoom, and change the background.
+`yo3mfs` is an offline Rust 3MF, STL, STEP, OBJ, glTF/GLB, and PLY viewer for macOS, Linux, and Windows, focused on Bambu Studio projects. The main workflow is to open or drop a file, inspect its geometry from every side, zoom, and change the background.
 
-Version 1.3.1 is implemented. Local evidence and outstanding platform checks are recorded in `docs/VALIDATION.md`. Do not present unverified compatibility as tested. Before working, read [SPEC.md](SPEC.md) and [README.md](README.md), then inspect the actual files and Git state.
+Version 1.5.0 source includes STL, STEP, OBJ, glTF/GLB, and PLY previews and is not yet published. Local evidence and outstanding platform checks are recorded in `docs/VALIDATION.md`. Do not present unverified compatibility as tested. Before working, read [SPEC.md](SPEC.md) and [README.md](README.md), then inspect the actual files and Git state.
 
 ## Priorities and scope
 
@@ -41,7 +41,7 @@ Run with `rtk cargo run --locked`. Check a file argument with `rtk cargo run --l
 - Use Rust edition 2024. The tested toolchain and declared MSRV are 1.97.1; retain `rust-toolchain.toml` and `Cargo.lock`. Earlier MSRVs are untested.
 - Separate `import`, `scene`, `camera`, `renderer`, `settings`, and `app`. Import, scene data, and camera mathematics must be testable without a window or GPU.
 - Keep `eframe`, `egui-wgpu`, and `wgpu` compatible. Do not create a second graphics device for the viewport.
-- Run ZIP/XML import and geometry preparation outside the UI thread. Do not create unbounded worker queues, scene copies, or GPU buffers.
+- Run ZIP/XML/STL import and geometry preparation outside the UI thread. Do not create unbounded worker queues, scene copies, or GPU buffers.
 - Tag load results with request IDs: an outdated load must not replace the most recently selected file.
 - Return input failures through `Result`, with typed errors and separate warnings. Do not use `unwrap` / `expect` on file data or OS responses.
 - Forbid `unsafe` in project code by default using `#![forbid(unsafe_code)]`. Assess dependencies separately.
@@ -57,7 +57,8 @@ Run with `rtk cargo run --locked`. Check a file argument with `rtk cargo run --l
 
 ## Import contract
 
-- Treat 3MF content as untrusted. Enforce limits while reading, not only against ZIP headers.
+- STL: preserve original geometry/winding, interpret unitless coordinates as millimeters with a persistent notice, and warn when ignoring binary color/attribute data. Keep ASCII/binary detection, 64 KiB line bounds, streaming limits, cancellation, and multi-solid tests.
+- Treat all supported model formats as untrusted. Enforce limits while reading, not only against ZIP headers.
 - Do not extract archives to arbitrary directories or follow external file references. Disable DTDs and external XML entities.
 - Discover the root model through OPC relationships; do not assume `3D/3dmodel.model`.
 - Resolve object IDs within their model part. Support instances, nested components, and Production Extension links within the documented profile.
@@ -67,7 +68,21 @@ Run with `rtk cargo run --locked`. Check a file argument with `rtk cargo run --l
 - Do not copy Bambu Studio code without a separate license assessment. Studying a format does not authorize copying its implementation.
 - Palette, inheritance, and `paint_color` are described in `docs/BAMBU-COLORS.md`. Preserve facet → part → object precedence and local IDs in external model parts. Keep original geometry/statistics separate from GPU subdivisions. Instance colors must not duplicate shared meshes.
 - Check new painting variants with exact coordinates/area and real files, not screenshots alone. Include subdivisions and instances in memory/triangle budgets. Invalid optional paint falls back with a warning. Retain Project colors / Neutral and migration of old settings.
-- Never overwrite the source 3MF or transmit its contents over the network.
+- Never overwrite the source model or transmit its contents over the network.
+
+## Additional mesh formats
+
+- Follow [docs/MESH-FORMATS.md](docs/MESH-FORMATS.md): bounded OBJ/PLY polygon parsing, self-contained glTF 2.0/GLB static scenes, preserved coordinates/transforms, millimeter notices/conversion, and persistent visual simplification warnings.
+- Keep external OBJ/glTF resources unopened. Reject unsupported required extensions and deformation instead of showing misleading geometry. Preserve shared instances and validate glTF references before integer narrowing.
+- Maintain vertex-color memory accounting and linear-light interpolation without changing Bambu facet colors. Point clouds, textures, animation, editing, and export need separate scope.
+
+## STEP preview contract
+
+- Follow [docs/STEP.md](docs/STEP.md): pinned sandboxed OCCT, classic Part 21 only, millimeter conversion, flattened placements, neutral tessellation, and persistent notes about simplification/healing and unverifiable root-transfer completeness.
+- Preserve bounds and coordinates; recenter in double precision before float mesh extraction. Validate imported face coverage and reject malformed/degenerate output. Never overwrite or upload a STEP or STL source.
+- Enforce bounded reads, sandbox growth traps, host/mesh budgets, epoch cancellation, and a conversion deadline. Cache only fixed compiled kernel code, never model data. Do not expose host filesystem/network/environment to WASM.
+- Maintain replacement-kernel support, pinned source/rebuild instructions, third-party notices, package license checks, and the audited macOS entitlement. Test runtime behavior under hardened signing; build success alone is insufficient.
+- Bump Cargo.toml/Cargo.lock together; 1.5.0 combines STL/STEP and OBJ/glTF/PLY. Keep historical 1.3.1 release evidence clearly separate.
 
 ## Verification and completion
 

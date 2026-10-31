@@ -1,12 +1,18 @@
 # macOS signing and notarization
 
-YO3MFS adapts the Developer ID / App Store Connect API-key setup from [GitRonimo's release workflow](https://github.com/mpakus/gitronimo/blob/fbf250ea3815e3157e28e90ca1b131e1e546c8a1/.github/workflows/release.yml). Its signed v2.0.6 release run passed. Cuckoding's current desktop configuration uses local ad-hoc signing; KickstandMoto uses iOS/EAS profiles, which are not macOS Developer ID credentials.
+YO3MFS adapts the Developer ID / App Store Connect API-key setup from [GitRonimo's release workflow](https://github.com/mpakus/gitronimo/blob/fbf250ea3815e3157e28e90ca1b131e1e546c8a1/.github/workflows/release.yml). Its signed v2.0.6 release run passed. The same secret names were also checked against Downey.jr / 1537paperstreet's successful release workflow; see the comparison below. Cuckoding's current desktop configuration uses local ad-hoc signing; KickstandMoto uses iOS/EAS profiles, which are not macOS Developer ID credentials.
 
 ## Current status
 
-The published YO3MFS **v1.3.1** DMGs are still ad-hoc signed and unnotarized. Adding this workflow does not change those assets. Signed distribution requires the secrets below, a new patch version/tag, successful Apple notarization, and verification of the downloaded packages. Do not replace v1.3.1 assets or move its tag.
+The published YO3MFS **v1.3.1** DMGs are still ad-hoc signed and unnotarized. Adding this workflow does not change those assets. Signed distribution requires the secrets below, a new version/tag (1.5.0 is prepared), successful Apple notarization, and verification of the downloaded packages. Do not replace v1.3.1 assets or move its tag.
 
 Branch and pull-request builds remain ad-hoc signed. A `v*` tag requires signing and notarization on both macOS jobs; missing credentials, failed signing, rejection, timeouts, or failed Gatekeeper checks prevent publishing the entire release. Credentials are exposed only to the signing step on tag builds.
+
+## STEP runtime in 1.4.0
+
+The new STEP backend uses Wasmtime 48.0.8. Its executable-memory implementation requires `com.apple.security.cs.allow-unsigned-executable-memory` under hardened runtime; `allow-jit` alone does not cover this version. The sole entitlement is recorded in [assets/macos/entitlements.plist](../assets/macos/entitlements.plist), passed during app signing, and checked exactly by package verification. No debugger or disabled-library-validation entitlement is included. See the [pinned runtime/source discussion](STEP.md#packaging-and-evidence).
+
+CI signs the headless geometry inspection executable with hardened runtime and this entitlement, then imports a STEP fixture before packaging. Local hardened runtime execution, actual Developer ID signing/notarization, and native Intel acceptance are distinct evidence; record each in [VALIDATION.md](VALIDATION.md).
 
 ## Repository secrets
 
@@ -22,7 +28,7 @@ Use the same names and credential types as GitRonimo, configured on `mpakus/yo3m
 | `APPLE_API_KEY_ID` | API key identifier |
 | `APPLE_API_ISSUER` | API key issuer identifier |
 
-GitHub can list secret names but cannot return their stored values. Reuse the original signing files/configuration, or have the owner add the values through **Settings → Secrets and variables → Actions**. Do not retrieve them through workflow logs or artifacts. An iOS distribution certificate or provisioning profile cannot replace a Developer ID Application certificate.
+GitHub can [list secret metadata without returning stored values](https://docs.github.com/en/rest/actions/secrets#get-a-repository-secret). Repository secrets in another project are not automatically available to YO3MFS. Reuse the original signing files/configuration, or have the owner add the values through [YO3MFS → Settings → Secrets and variables → Actions](https://github.com/mpakus/yo3mfs/settings/secrets/actions). Do not retrieve them through workflow logs or artifacts. An iOS distribution certificate or provisioning profile cannot replace a Developer ID Application certificate.
 
 With the original files outside the repository, upload encoded files through standard input (not command arguments):
 
@@ -32,6 +38,26 @@ base64 < /secure/path/AuthKey.p8 | tr -d '\n' | gh secret set APPLE_API_KEY_BASE
 ```
 
 For each remaining value, `gh secret set SECRET_NAME --repo mpakus/yo3mfs` prompts for input. Never put passwords/private keys into source files, chat, shell history, or release notes. Existing local Developer ID signing ability does not prove that an exportable `.p12` and usable notarization API key are available for hosted runners.
+
+## Downey.jr comparison — October 17, 2026
+
+The owner's local `downey.jr` checkout points to `mpakus/1537paperstreet`. Its local [release workflow](https://github.com/mpakus/1537paperstreet/blob/10d165e49fc9d19775a2f3e70c8ce0434158fec4/.github/workflows/release.yml) matches the workflow used by the successful [v0.8.26 release run](https://github.com/mpakus/1537paperstreet/actions/runs/37828380069). The macOS signing, app/DMG notarization, stapling, and distribution verification steps all passed.
+
+All seven secret names in the owner's screenshot exist on `mpakus/1537paperstreet` and match YO3MFS's signing inputs. The difference is the packaging tool: Downey uses Tauri, which expects these environment aliases:
+
+| Repository secret | Downey/Tauri environment variable |
+| --- | --- |
+| `MACOS_CERTIFICATE_BASE64` | `APPLE_CERTIFICATE` |
+| `MACOS_CERTIFICATE_PASSWORD` | `APPLE_CERTIFICATE_PASSWORD` |
+| `DEVELOPER_ID_APPLICATION` | `APPLE_SIGNING_IDENTITY` |
+| `APPLE_API_KEY_BASE64` | Decoded into a file referenced by `APPLE_API_KEY_PATH` |
+| `APPLE_API_KEY_ID` | `APPLE_API_KEY` |
+| `APPLE_API_ISSUER` | `APPLE_API_ISSUER` |
+| `KEYCHAIN_PASSWORD` | Present in repository secrets, but unused by this Tauri workflow |
+
+YO3MFS reads the seven repository secret names directly in its Python signing script and uses `KEYCHAIN_PASSWORD` for its temporary keychain. No secret renaming or Tauri dependency is needed. Downey builds a universal macOS package; YO3MFS retains separate Apple Silicon and Intel packages.
+
+At inspection, and again during the October 31, 2026 v1.5.0 preparation, YO3MFS's repository secret list was empty (zero configured secrets). No `.p12`, `.p8`, or environment configuration files were found in the inspected Downey checkout outside build/dependency directories. The remaining setup is to add the original credentials to YO3MFS, then publish and verify a new signed version. The reference project's successful run does not verify YO3MFS's signing path.
 
 ## Release sequence
 

@@ -1,0 +1,17 @@
+#!/bin/sh
+set -eu
+
+project_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+
+# Keep model paths relative to the caller while Cargo uses the pinned toolchain.
+case "${1-}" in
+    ""|--help|--version|/*) ;;
+    *)
+        model_path="$(pwd)/$1"
+        shift
+        set -- "$model_path" "$@"
+        ;;
+esac
+
+cd "$project_root"
+exec cargo run --locked --release --bin yo3mfs -- "$@"

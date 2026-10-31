@@ -1,0 +1,53 @@
+YO3MFS 1.5.0 — model preview dependencies
+
+The project has not selected an application license. The following third-party
+components retain their own licenses. These notices do not grant an application
+license or change the original authors' terms.
+
+occt-wasm 5.0.1 facade/host: MIT (alternatively Apache-2.0 upstream).
+Copyright (c) 2026 Andy Mai. Full MIT text: licenses/occt-wasm-MIT.txt.
+Source: https://github.com/andymai/occt-wasm/tree/d01b8c9e61537c5c09feeb34592d75220eaad263
+The YO3MFS empty-sandbox host adapts its import behavior and ABI conventions.
+
+Embedded Open CASCADE Technology WebAssembly kernel: LGPL-2.1-only with the
+OCCT exception. Copyright Open CASCADE SAS and contributors, as stated in
+its source files. Full terms: licenses/OCCT-LGPL-2.1.txt and
+licenses/OCCT-exception.txt.
+Exact source: https://github.com/andymai/OCCT/tree/c7f60ffe85f28c67358d1771454044f0521f2fdd
+Build/facade source: the occt-wasm revision above, including its OCCT submodule.
+No changes to the embedded kernel are made by YO3MFS.
+
+The embedded kernel can be replaced with a compatible uncompressed WASM module
+using YO3MFS_STEP_KERNEL=/absolute/path/to/occt-wasm.wasm before launching.
+The replacement is compiled safely as WebAssembly in the same sandbox; native
+serialized machine code is never loaded. See docs/STEP.md in the repository
+for source/rebuild instructions and compatibility limits. Reverse engineering
+for debugging modifications to the LGPL library is not restricted by YO3MFS.
+Distributors must preserve these terms and supply corresponding library source
+and rebuild materials as required by the LGPL; source links alone are not a
+claim that every distribution obligation has been fulfilled.
+
+Wasmtime 48.0.8 and Cranelift: Apache-2.0 WITH LLVM-exception.
+Source: https://github.com/bytecodealliance/wasmtime/tree/v48.0.8
+Full terms: licenses/Wasmtime-Apache-2.0-LLVM.txt.
+Other Rust dependencies and their exact versions remain recorded in Cargo.lock;
+this model-import notice is not a complete application dependency audit.
+
+Noto Sans Symbols 2: SIL Open Font License 1.1, supplied separately as
+NotoSansSymbols2-OFL.txt. No font modifications.
+
+gltf, gltf-json, and gltf-derive 1.4.1: MIT OR Apache-2.0.
+Source: https://github.com/gltf-rs/gltf/tree/v1.4.1
+MIT texts/copyright notices: licenses/gltf-MIT.txt,
+licenses/gltf-json-MIT.txt, and licenses/gltf-derive-MIT.txt.
+Only names/utils are enabled; the filesystem and image importer is disabled.
+
+base64 0.22.1: MIT OR Apache-2.0.
+Source: https://github.com/marshallpierce/rust-base64/tree/v0.22.1
+MIT text/copyright notice: licenses/base64-MIT.txt.
+byteorder 1.5.0: Unlicense OR MIT.
+Source: https://github.com/BurntSushi/byteorder/tree/1.5.0
+MIT text/copyright notice: licenses/byteorder-MIT.txt.
+inflections 1.1.1 (build-time dependency of gltf-derive): MIT.
+Source: https://docs.rs/inflections/1.1.1/
+Full text/copyright notice: licenses/inflections-LICENSE.txt.

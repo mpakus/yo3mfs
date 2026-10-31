@@ -11,8 +11,8 @@ fn main() {
     let initial = args.next();
     if initial.as_deref() == Some(std::ffi::OsStr::new("--help")) {
         println!(
-            "yo3mfs {}\nUsage: yo3mfs [path/to/model.3mf]\nOffline 3MF viewer. Input files are never modified.",
-            env!("CARGO_PKG_VERSION")
+            "{}",
+            Message::with(Key::CliHelp, [env!("CARGO_PKG_VERSION")]).render(language)
         );
         return;
     }

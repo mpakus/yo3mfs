@@ -202,3 +202,144 @@ YO3MFS now adapts GitRonimo's seven secret names, with tag-only signing, an isol
 Local verification: **23 Python packaging/release/signing tests**, actionlint, documentation links, and `git diff --check` passed. Signing tests use synthetic credentials and mocked OS/Apple commands; they cover missing/invalid secrets, redaction, cleanup failures, timeouts without duplicate submissions, rejected/unknown notary status, and checksumming only after Gatekeeper acceptance. They are not evidence of actual Apple notarization.
 
 Credential availability remains the blocker for an end-to-end signed release. GitRonimo has the seven repository secret names; YO3MFS has none configured. GitHub does not expose saved values for copying. No original signing/API-key files were found in the inspected project roots or standard local signing-file locations. A local Developer ID identity exists, but exportable certificate material and usable notarization credentials have not been supplied to this workflow. No credentials were exported or changed; published v1.3.1 binaries and its tag remain unchanged.
+
+## Downey.jr signing comparison — 2026-10-17
+
+The requested Downey.jr checkout maps to `mpakus/1537paperstreet`. Its local release workflow is byte-for-byte identical to the workflow at the successful [v0.8.26 release commit](https://github.com/mpakus/1537paperstreet/actions/runs/37828380069). GitHub reports successful credential preparation, Tauri signing/notarization, DMG notarization/stapling, and distribution verification. All seven repository secret names match the owner's screenshot and YO3MFS's existing signing inputs. Tauri aliases six inputs and manages its own keychain; the stored `KEYCHAIN_PASSWORD` is unused there, whereas YO3MFS uses it explicitly. Details are in [MACOS-SIGNING.md](MACOS-SIGNING.md).
+
+YO3MFS's [signing-configuration branch run](https://github.com/mpakus/yo3mfs/actions/runs/39003262549) passed all four native build jobs. As intended for a branch run, signing/notarization and release publication were skipped. This establishes hosted build/test/package success, not Apple acceptance.
+
+The live YO3MFS repository secret list remains empty. No original `.p12`, `.p8`, or environment configuration files were found in the inspected Downey checkout outside build/dependency directories. No source workflow changes were needed for compatibility with these secret names. This comparison changed only documentation; no credentials, reference-project files, release tags, or published assets were changed.
+
+## Unreleased STL support — 2026-10-18
+
+The source checkout now imports ASCII and little-endian binary STL through the existing bounded background loader. The picker, empty-window/drop copy, About text, CLI help, and both dictionaries include STL. Coordinates/winding are preserved; unitless coordinates use millimeters with a persistent notice. Multiple ASCII solids remain in one mesh. Nonstandard binary colors/attributes use neutral material with a warning. No dependency, package version, published tag, or release asset changed.
+
+Local checks on Apple Silicon/macOS:
+
+| Check | Result |
+| --- | --- |
+| `cargo fmt --all -- --check` | Passed |
+| `cargo clippy --locked --all-targets --all-features -- -D warnings` | Passed without warnings |
+| `cargo test --locked --all-targets --all-features` | 58 passed, including 12 STL tests |
+| `cargo test --locked --no-default-features` | 55 passed without GUI/GPU |
+| `cargo build --locked --release --examples --bins` | Passed |
+| `python3 -m unittest discover -s tests -p 'test_*.py'` | 23 passed; signing/Apple interactions remain mocked |
+| Release `--help` | Both file formats shown |
+| Release headless inspection | Both STL fixtures: 1 instance, 4 triangles, 10 × 20 × 30 mm; existing 3MF fixture: 2 instances, 24 triangles, 85 × 30 × 42.5 mm |
+| `scripts/package.py --dmg --output-dir target/stl-validation/package` and `scripts/verify_package.py target/stl-validation/package` | Development app/DMG, SHA-256, ICNS resource, ad-hoc signature, and DMG integrity passed |
+| Documentation relative links, fixture SHA-256, and `git diff --check` | Passed |
+
+The project-authored ASCII/binary tetrahedra are in `tests/fixtures/`, with provenance and SHA-256 in [manifest.json](../tests/fixtures/manifest.json). Bounds are `[-2, -3, -4]` to `[8, 17, 26]`; surface area is 900 mm² and signed volume is 1,000 mm³. The binary fixture intentionally starts with `solid`. Tests also cover ZIP-like binary headers, multiple solids, CRLF/scientific notation, Unicode/spaced paths, misleading extensions, unchanged source bytes, truncation at every byte of a binary triangle, forged counts/trailing bytes, incomplete ASCII geometry, nonfinite/range failures, degenerates/empty geometry, input/line/triangle/instance/memory/rendering limits, streaming cancellation, input growth after size inspection, and persistent EN/RU warnings. Existing latest-request/cancellation and 3MF/Bambu tests still pass.
+
+The initial STL tests failed against the 3MF-only loader before implementation. A separate review caught ZIP-signature bytes inside valid binary STL headers and an accidental change to the Core 3MF diagnostic. Both were corrected; a failing header-dispatch regression was verified before the fix. An inverted binary-length condition also caused the focused geometry test to fail; the source was restored and the final checks above passed.
+
+Native macOS UI checks used the locally built app: binary and ASCII fixtures open through the system picker; the expected filename/counts/dimensions appear and geometry is visible; Top/Orthographic views work; Import notes retain the millimeter assumption. Loading an incomplete STL displays a typed error while keeping the previous ASCII model visible with its original filename/statistics. Launching the packaged executable with the binary STL path opens that scene at startup. The existing background preference was retained.
+
+A generated 1,000,000-triangle binary STL (50,000,084 bytes; SHA-256 `a2ffede7c078ab14a5bcdbc6a4a35ee5860290c44634121bd76fee48c003190f`) was inspected once with the release example: import 0.037 s, import plus geometry preparation 0.046 s, maximum RSS 135,069,696 bytes. It repeats one synthetic triangle and is only a parser/allocation smoke measurement, not a real-model, first-frame, or FPS benchmark.
+
+Limitations: no real CAD/Bambu STL exporter corpus was tested, and no new GitHub or native Intel Mac/Windows/Linux run was performed. Physical drag-and-drop, gestures/DPI, and GPU-loss injection remain unverified for STL. macOS packaging emitted the existing `hdiutil create` deprecation warning but completed and verified successfully. The local development artifact still carries package version 1.3.1 and is ad-hoc signed; it is not a new public release or notarization result. Published v1.3.1 downloads remain 3MF-only.
+
+## Version 1.4.0 — STL and STEP preview, 2026-10-18
+
+This source change combines the STL implementation above with STEP/STP preview and increases Cargo.toml/Cargo.lock to **1.4.0**. All existing project Markdown files were reviewed and updated; historical release/signing records remain distinct. README download targets and [release notes](releases/v1.4.0.md) describe a prepared, unpublished version. No commit, tag, release, credential change, or upload was performed.
+
+STEP uses pinned occt-wasm 5.0.1 and Wasmtime 48.0.6 through a safe Rust host. The format profile, conversion/healing limitations, sandbox limits, and source/license/replacement instructions are in [STEP.md](STEP.md). Import notes always disclose neutral tessellation, flattened assembly structure, omitted metadata/external files, and the upstream facade's inability to verify full root transfer. Imported-face coverage is checked separately before accepting a mesh.
+
+Local checks on the same Apple Silicon/macOS environment:
+
+| Check | Result |
+| --- | --- |
+| `cargo fmt --all -- --check` | Passed |
+| `cargo clippy --locked --all-targets --all-features -- -D warnings` | Passed without warnings |
+| `cargo test --locked --all-targets --all-features` | 67 passed, including 6 STEP integration tests and 3 sandbox tests |
+| `cargo test --locked --no-default-features` | 64 passed without GUI/GPU |
+| `cargo build --locked --release --bins --example inspect` | Passed; `yo3mfs --version` reports 1.4.0 |
+| Python packaging/release/signing regressions | 23 passed; Apple services and certificate operations are mocked |
+| `target/actionlint/actionlint .github/workflows/ci.yml` | Passed with actionlint 1.7.12 |
+| STEP release inspection | Box: 12 triangles, 10 × 20 × 30 mm; cylinder: 628 triangles, 10 × 9.998023 × 20 mm |
+| Hardened macOS runtime | Ad-hoc signed inspection executable with the exact release entitlement successfully imported STEP; 12 triangles and exact box dimensions |
+| Development package and verifier | 1.4.0 ARM64 app/DMG, checksum, ICNS, font/STEP notices/licenses, ad-hoc signature, and DMG integrity passed |
+| Native macOS ARM64 STEP viewer | Packaged app: STP picker load, STEP startup argument, rendered cylinder/assembly, camera controls, persistent EN/RU notes, malformed-input scene retention, and picker cancellation passed |
+| Markdown local links, version consistency, fixture SHA-256, workflow syntax, and diff whitespace | Passed |
+
+The four STEP fixtures are authored by `examples/generate_step_fixtures.rs` and exported by the pinned Open CASCADE 8.0 kernel as AP214 `AUTOMOTIVE_DESIGN`. [manifest.json](../tests/fixtures/manifest.json) records exact SHA-256 and expected bounds. The box spans `[-2, -3, -4]` to `[8, 17, 26]` with signed volume 6,000 mm³. A repeated-placement compound spans 50 × 20 × 30 mm with 24 triangles. A second box is offset by one billion millimeters; double-precision recentering preserves its 10 × 20 × 30 mm size. Cylinder bounds are checked within tessellation tolerance. These are synthetic exporter fixtures, not a broad CAD compatibility corpus.
+
+Regression tests additionally cover meter and conversion-based inch units, source-byte preservation, Unicode/misleading-extension paths, typed EN/RU warnings, malformed/truncated Part 21 envelopes, empty geometry, lower input/memory/instance/source-triangle/rendered-triangle budgets, and pre-cancellation. Tiny WASM test modules exercise actual growth traps, running-loop interruption, deadlines, and controlled runtime traps without a GPU. Independent review identified ASCII-STL/STEP-extension precedence and weak entity-record framing; both were fixed and tested. An initial clock stub error was caught before STEP import succeeded and corrected to supply the real host timestamp.
+
+A mutation experiment removed restoration of the STEP world offset. The distant-geometry regression failed on the expected minimum coordinate; the importer was restored byte-for-byte afterward.
+
+A replacement-kernel smoke check decompressed the unmodified pinned crate WASM (23,023,739 bytes), selected it with `YO3MFS_STEP_KERNEL`, and successfully imported the distant box. A 32 MiB + 1 byte replacement was rejected with the typed kernel-size diagnostic. This verifies replacement loading, not a source rebuild.
+
+A fresh optimized headless cylinder import including kernel initialization took 5.57 seconds; the hardened box check took 3.23 seconds. These are single local observations, not a general CAD, first-frame, FPS, or process-memory benchmark. Debug tests compile the CAD module more slowly. Initial fixed-kernel compilation is cached per process and is outside the 60-second conversion deadline; this limitation is documented.
+
+The development package is at `target/step-validation/package/yo3mfs-1.4.0-arm64.dmg`. `hdiutil` emitted its existing creation-command deprecation warning but creation and verification succeeded. Hardened-runtime execution used an ad-hoc signature and does not prove Developer ID signing, Apple notarization, Gatekeeper acceptance on download, or Intel execution.
+
+The initial native STEP check was blocked by the locked Mac. After the user unlocked it, the same packaged 1.4.0 ARM64 app was checked through its real window:
+
+- The system picker opened `sample-cylinder.stp`; the viewport rendered the curved neutral mesh and the inspector showed 628 triangles, one combined instance, and rounded dimensions of 10.00 × 10.00 × 20.00 mm. The app reported 3.41 seconds for this first load.
+- Orthographic/top views, wheel zoom, Fit all, keyboard orbit, and screen-space arrow panning visibly changed the view. Both persistent STEP conversion notes were available in Import notes.
+- A deliberately malformed `invalid.step` produced the localized STEP error while retaining the cylinder and its statistics. Canceling the system picker also retained the scene. Existing errors and import notes changed immediately to Russian and back to English; the original English preference and background were restored/retained.
+- Launching the packaged executable with `sample-assembly.step` as its file argument rendered both separated box placements. The inspector showed 24 triangles, one combined instance, and 50.00 × 20.00 × 30.00 mm; the app reported 3.44 seconds. Fixture hashes remained unchanged after the checks.
+
+These checks establish local Apple Silicon window/picker/startup/rendering evidence, not full native acceptance. Physical drag-and-drop and cancellation during an actual CAD conversion were not exercised in this UI session. No new four-target GitHub run, native Intel/Windows/Linux GUI acceptance, real third-party STEP corpus, GPU-loss injection, library rebuild, or full distribution-license audit was completed. Published v1.3.1 assets remain unchanged.
+
+## Local development launcher — October 19, 2026
+
+Added executable `bin/test.dev` to build/run the optimized desktop app with the pinned toolchain and lockfile. The actual `bin/test.dev --version` build/run passed and printed `yo3mfs 1.4.0`. Shell syntax and focused launcher checks passed for invocation from another directory, relative/absolute model paths, spaces/Cyrillic, argument forwarding, and propagation of Cargo's nonzero exit status. README/SPEC local links and diff whitespace passed. This shell/documentation change did not rerun Rust suites or add new GUI/platform acceptance evidence.
+
+
+## OBJ, glTF/GLB, and PLY — October 31, 2026
+
+The unpublished 1.4.0 source now includes the [static mesh profile](MESH-FORMATS.md). This evidence is separate from the October 18 STL/STEP work and the published 1.3.1 release.
+
+Completed local checks on macOS ARM64:
+
+- Desktop/all-target/all-feature suite: **87 tests passed** (`rtk cargo test --locked --all-targets --all-features`).
+- Core-only suite: **84 tests passed** (`rtk cargo test --locked --no-default-features`), including 20 tests across the new OBJ, PLY, glTF, and shared-format integration suites.
+- Formatting and all-target/all-feature Clippy with warnings denied passed after review fixes.
+- Packaging/release/signing regression suite: **23 tests passed**; these use mocked signing services and synthetic package executables and do not establish notarization or other-platform acceptance.
+- Owned fixtures cover colored OBJ, ASCII/little-endian/big-endian PLY, embedded glTF, and GLB with two shared instances and a nested translation. Bounds, surface area, signed volume, instance/triangle counts, source immutability, provenance hashes, and generator reproducibility were checked.
+- Tests cover concave polygon winding, negative/slash indices, unused-vertex bounds, PLY property ordering and ignored attributes, every binary PLY truncation, sparse/interleaved glTF data, normalized colors, reflections/scales, malformed/cyclic scenes, oversized references, required extensions, deformation rejection, memory/input/triangle/instance limits, and cancellation while reading.
+- Independent review identified oversized glTF index narrowing, degenerate strip connectors, and fully skipped primitives breaking preparation. Regression tests reproduced each issue and passed after fixes. A mutation of the oversized-index guard made its regression test fail, then the original guard was restored.
+- Both dictionaries compile exhaustively and retain placeholder-parity checks. Package notices include the added glTF/base64/parser-support license texts. Local documentation links and diff whitespace checks passed.
+
+Additional completed checks:
+
+- Optimized binary and inspector build passed: `rtk cargo build --locked --release --bins --example inspect`.
+- Release binary `--version` returned `yo3mfs 1.4.0`; `--help` includes the new extensions. Release inspector smoke checks passed for 3MF, STL, OBJ, all three PLY encodings, embedded glTF, and GLB. OBJ/PLY tetrahedra measured 10 × 20 × 30 mm; the two glTF instances spanned 50 × 20 × 30 mm within float-input tolerance.
+- Native macOS ARM64: opened the owned colored OBJ through the system picker in the newly built app. The window showed one instance, four triangles, 10 × 20 × 30 mm dimensions, and smoothly interpolated vertex colors. No shader/runtime failure appeared. The window changed during the next picker check; native PLY/glTF interaction and failed-load recovery were not marked complete. The app was left open.
+- A local ad-hoc-signed development bundle/DMG was built under `target/format-validation/macos`. Disk-image creation required execution outside the filesystem sandbox; the sandboxed attempt reported `Device not configured`. Package verification passed: SHA-256 manifest, bundled notices/license files, strict ad-hoc code-signature verification, and DMG integrity. This is not a notarized public release.
+
+Remaining acceptance: native macOS ARM64 PLY/glTF interaction, drag-and-drop and failed-load recovery for the new formats; independent real exporter/scanner files with recorded versions, macOS Intel native behavior, Windows native behavior, Linux X11 and Wayland native behavior, and public release signing/notarization. Synthetic fixtures are not exporter certification. Textures, external resources, animation, skins/morphs, and point clouds remain outside the documented static preview profile.
+
+
+## Version 1.5.0 — native macOS follow-up, October 31, 2026
+
+The owner requested completion of native PLY/glTF checks and a version/tag push. Version 1.5.0 combines the previously unpublished 1.4.0 STL/STEP implementation with OBJ, PLY, and glTF/GLB. Historical 1.4.0 evidence above describes development builds, not a published release.
+
+Native window checks on the same Apple Silicon Mac used the optimized, ad-hoc-signed bundle under `target/format-validation/macos` (built as 1.4.0 before the metadata bump; the mesh import/UI implementation is unchanged, and the subsequent STEP runtime security update is recorded below):
+
+- The real macOS picker opened ASCII, little-endian, and big-endian PLY. Each rendered interpolated vertex colors and showed one instance, four triangles, and 10.00 × 20.00 × 30.00 mm. Orthographic projection and Top view worked. Import notes exposed the persistent millimeter assumption.
+- Embedded glTF and GLB each rendered both separated instances, showed eight triangles and 50.00 × 20.00 × 30.00 mm, and exposed the static-preview limitation note.
+- An incomplete PLY without faces, a glTF referring to an external buffer, and a truncated GLB each showed the appropriate localized error while retaining the previous visible geometry, filename, dimensions, and counts. The external-buffer error advised exporting a self-contained file.
+- Choosing another valid file through the error banner cleared the prior error and replaced the scene successfully.
+- Finder drag attempts through the automation tool did not deliver a drop to the viewer. This is not evidence of an application failure or a successful drag-and-drop test. Manual confirmation was requested; physical drop acceptance remains unverified until recorded separately.
+
+Release preparation: Cargo versions, README download targets, dependency notices, current format documentation, and release notes are synchronized to 1.5.0. The GitHub repository secret metadata was checked without retrieving values: **zero secrets are configured**. Tagged macOS signing and therefore public release publication will fail closed until the original Developer ID/notarization credentials are configured. No signing bypass or secret recovery was attempted.
+
+Other limitations remain: independent exporter/scanner compatibility, native Intel Mac/Windows/Linux X11/Wayland GUI acceptance, clean-system/GPU-loss checks, and STEP corresponding-source/build-material distribution verification. Synthetic fixtures and passing automated builds do not establish these.
+
+### Dependency audit during 1.5.0 preparation
+
+The October 31 RustSec audit initially reported five Wasmtime advisories, including critical ARM64 `br_table` compilation advisory [RUSTSEC-2026-0379](https://rustsec.org/advisories/RUSTSEC-2026-0379). Wasmtime and its matching Cranelift/Pulley/internal crates were updated from 48.0.6 to [48.0.8](https://github.com/bytecodealliance/wasmtime/releases/tag/v48.0.8); the OCCT kernel and facade remain pinned at 5.0.1. The follow-up audit no longer reports Wasmtime vulnerabilities.
+
+The raw audit is **not clean**: three zstd/zstd-safe vulnerability records and unsoundness notices remain in Wasmtime's optional persistent-cache dependency, enabled transitively by the upstream occt-wasm default feature set. The application creates its own Wasmtime engine from `OcctKernel::engine_config()` (which starts with `Config::new()`) and explicitly disables persistent caching with `cache(None)`; it caches only the already-compiled fixed module in process memory. The implicated zstd persistent-cache path is therefore unused by this host. An independent read-only review traced Wasmtime's absent-cache path directly to compilation, bypassing cache reads/writes and zstd processing, and confirmed that kernel decompression uses Brotli. No advisory was suppressed. Upstream feature separation or a patched compatible cache dependency remains follow-up work. Linux portal dependencies also retain three unmaintained-package notices; clipboard-win 5.4.1 was reported yanked by the online audit. These are not claims of a complete dependency or distribution-license audit.
+
+The staged whitespace check reports trailing spaces in original OCCT-exported STEP fixtures and blank/trailing lines in copied upstream license texts. Those bytes are retained to preserve fixture hashes and source license copies. The check passes for authored source/documentation with these exact generated/upstream paths excluded.
+
+### Final local 1.5.0 verification
+
+After the Wasmtime update and explicit cache disable: formatting and Clippy (`--locked --all-targets --all-features -- -D warnings`) passed; **87 desktop/integration tests** and **84 core-only tests** passed. The optimized binary/inspector build, all ten format fixture smoke checks, 23 Python packaging/signing/release tests, actionlint, tag/version consistency, local documentation links, source fixture hashes, and mesh-generator reproducibility passed. The binary reports `yo3mfs 1.5.0`. A hardened-runtime ad-hoc-signed inspector with the audited entitlement imported the STEP box in 3.39 seconds with 12 triangles and 10 × 20 × 30 mm dimensions.
+
+The final ad-hoc development package is `target/release-validation-1.5.0/macos/yo3mfs-1.5.0-arm64.dmg`, SHA-256 `4413124ba9f337b3bb1f5bf26329681a4ee8fd9f1ba2ee9d48f28b0e35250cd4`. Bundle version/icon/license checks, strict code-signature verification, SHA-256 manifest, and DMG integrity passed. Native launch of that exact bundle showed **Version 1.5.0** in About, then opened and rendered `sample.glb` through the picker with two instances, eight triangles, and 50 × 20 × 30 mm dimensions. This remains an ad-hoc local build, not notarization or other-platform acceptance.

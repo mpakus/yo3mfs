@@ -17,5 +17,255 @@
         42.5
       ]
     }
+  },
+  "sample-ascii.stl": {
+    "source": "Synthetic tetrahedron authored for this project; no third-party model",
+    "exporter": "YO3MFS fixture generator, 2026-10-18; not a CAD exporter compatibility claim",
+    "encoding": "ASCII",
+    "sha256": "40a3e2f0de6193fff35613de5602923bc36aece8b7646893e700d1f19e7f9539",
+    "instances": 1,
+    "triangles": 4,
+    "bounds_mm": {
+      "min": [
+        -2,
+        -3,
+        -4
+      ],
+      "max": [
+        8,
+        17,
+        26
+      ]
+    }
+  },
+  "sample-binary.stl": {
+    "source": "Synthetic tetrahedron authored for this project; no third-party model",
+    "exporter": "YO3MFS fixture generator, 2026-10-18; not a CAD exporter compatibility claim",
+    "encoding": "binary little-endian; header intentionally starts with solid",
+    "sha256": "0764029eb10a80f429f456eabd4c1c37fcb5d7402c29abb620b6073612a9abca",
+    "instances": 1,
+    "triangles": 4,
+    "bounds_mm": {
+      "min": [
+        -2,
+        -3,
+        -4
+      ],
+      "max": [
+        8,
+        17,
+        26
+      ]
+    }
+  },
+  "sample-box.step": {
+    "source": "Synthetic geometry authored by examples/generate_step_fixtures.rs; no third-party model",
+    "exporter": "occt-wasm 5.0.1 embedded Open CASCADE 8.0, 2026-10-18",
+    "encoding": "ISO 10303-21 / AUTOMOTIVE_DESIGN (AP214)",
+    "sha256": "15475d56d1539f94fcac86e77d8f7713042c2ddcc3d918ad5b84e0bd652ebdcd",
+    "instances": 1,
+    "triangles": 12,
+    "bounds_mm": {
+      "min": [
+        -2,
+        -3,
+        -4
+      ],
+      "max": [
+        8,
+        17,
+        26
+      ]
+    },
+    "tolerance_mm": 1e-05
+  },
+  "sample-cylinder.stp": {
+    "source": "Synthetic geometry authored by examples/generate_step_fixtures.rs; no third-party model",
+    "exporter": "occt-wasm 5.0.1 embedded Open CASCADE 8.0, 2026-10-18",
+    "encoding": "ISO 10303-21 / AUTOMOTIVE_DESIGN (AP214)",
+    "sha256": "247cff42c28d3fbc74b287aa026a8464ecc48ba08564b457869fbe288775d964",
+    "instances": 1,
+    "triangles": null,
+    "bounds_mm": {
+      "min": [
+        -5,
+        -5,
+        0
+      ],
+      "max": [
+        5,
+        5,
+        20
+      ]
+    },
+    "tolerance_mm": 0.1
+  },
+  "sample-assembly.step": {
+    "source": "Synthetic geometry authored by examples/generate_step_fixtures.rs; no third-party model",
+    "exporter": "occt-wasm 5.0.1 embedded Open CASCADE 8.0, 2026-10-18",
+    "encoding": "ISO 10303-21 / AUTOMOTIVE_DESIGN (AP214)",
+    "sha256": "284175cdc84178d6d7319e1eeb14379b9fb3f8a674eca9d3dcc6ef0e6fb01bca",
+    "instances": 1,
+    "triangles": 24,
+    "bounds_mm": {
+      "min": [
+        -2,
+        -3,
+        -4
+      ],
+      "max": [
+        48,
+        17,
+        26
+      ]
+    },
+    "tolerance_mm": 1e-05
+  },
+  "sample-distant.step": {
+    "source": "Synthetic geometry authored by examples/generate_step_fixtures.rs; no third-party model",
+    "exporter": "occt-wasm 5.0.1 embedded Open CASCADE 8.0, 2026-10-18",
+    "encoding": "ISO 10303-21 / AUTOMOTIVE_DESIGN (AP214)",
+    "sha256": "66b8214656e7cc9783ec44d02216f00c79770411324b32e3f287e626589420aa",
+    "instances": 1,
+    "triangles": 12,
+    "bounds_mm": {
+      "min": [
+        999999998,
+        -3,
+        -4
+      ],
+      "max": [
+        1000000008,
+        17,
+        26
+      ]
+    },
+    "tolerance_mm": 1e-05
+  },
+  "sample.obj": {
+    "source": "Synthetic tetrahedron authored by scripts/generate_mesh_fixtures.py; no third-party model",
+    "exporter": "YO3MFS mesh fixture generator v1, 2026-10-31; not exporter interoperability evidence",
+    "encoding": "OBJ polygons with RGB vertex extension",
+    "sha256": "ffd2102e0cd040ee7cd12d601ebdc3fba26257b239418abfba15199d0421a653",
+    "instances": 1,
+    "triangles": 4,
+    "bounds_mm": {
+      "min": [
+        -2,
+        -3,
+        -4
+      ],
+      "max": [
+        8,
+        17,
+        26
+      ]
+    },
+    "tolerance_mm": 1e-05
+  },
+  "sample-ascii.ply": {
+    "source": "Synthetic tetrahedron authored by scripts/generate_mesh_fixtures.py; no third-party model",
+    "exporter": "YO3MFS mesh fixture generator v1, 2026-10-31; not exporter interoperability evidence",
+    "encoding": "ascii",
+    "sha256": "7bed7f930dbad1aef7982ce25deb87f7e7df44e6215f769df37ee64af3f40189",
+    "instances": 1,
+    "triangles": 4,
+    "bounds_mm": {
+      "min": [
+        -2,
+        -3,
+        -4
+      ],
+      "max": [
+        8,
+        17,
+        26
+      ]
+    },
+    "tolerance_mm": 1e-05
+  },
+  "sample-little.ply": {
+    "source": "Synthetic tetrahedron authored by scripts/generate_mesh_fixtures.py; no third-party model",
+    "exporter": "YO3MFS mesh fixture generator v1, 2026-10-31; not exporter interoperability evidence",
+    "encoding": "binary_little_endian",
+    "sha256": "a317b3de76bedf3ef83cbb70929609dec3494388b5dff5a3075b5144698e67d8",
+    "instances": 1,
+    "triangles": 4,
+    "bounds_mm": {
+      "min": [
+        -2,
+        -3,
+        -4
+      ],
+      "max": [
+        8,
+        17,
+        26
+      ]
+    },
+    "tolerance_mm": 1e-05
+  },
+  "sample-big.ply": {
+    "source": "Synthetic tetrahedron authored by scripts/generate_mesh_fixtures.py; no third-party model",
+    "exporter": "YO3MFS mesh fixture generator v1, 2026-10-31; not exporter interoperability evidence",
+    "encoding": "binary_big_endian",
+    "sha256": "6d984f480f3426e5afd965aa407bbf7268a2687e003891b3e2ad6441d49cb612",
+    "instances": 1,
+    "triangles": 4,
+    "bounds_mm": {
+      "min": [
+        -2,
+        -3,
+        -4
+      ],
+      "max": [
+        8,
+        17,
+        26
+      ]
+    },
+    "tolerance_mm": 1e-05
+  },
+  "sample.glb": {
+    "source": "Synthetic tetrahedron authored by scripts/generate_mesh_fixtures.py; no third-party model",
+    "exporter": "YO3MFS mesh fixture generator v1, 2026-10-31; not exporter interoperability evidence",
+    "encoding": "GLB 2.0 with shared geometry and nested placement",
+    "sha256": "a5d9fabd1bd03347fd336b93a9998528ba1902f4b77bafb6b9de2f1446762d4e",
+    "instances": 2,
+    "triangles": 8,
+    "bounds_mm": {
+      "min": [
+        -2,
+        -3,
+        -4
+      ],
+      "max": [
+        48,
+        17,
+        26
+      ]
+    },
+    "tolerance_mm": 1e-05
+  },
+  "sample.gltf": {
+    "source": "Synthetic tetrahedron authored by scripts/generate_mesh_fixtures.py; no third-party model",
+    "exporter": "YO3MFS mesh fixture generator v1, 2026-10-31; not exporter interoperability evidence",
+    "encoding": "glTF 2.0 with embedded base64 buffer",
+    "sha256": "4d7b51a458e46a02772227a16b65d4a102e92e6316feb806a04bf6bf77d2d8b5",
+    "instances": 2,
+    "triangles": 8,
+    "bounds_mm": {
+      "min": [
+        -2,
+        -3,
+        -4
+      ],
+      "max": [
+        48,
+        17,
+        26
+      ]
+    },
+    "tolerance_mm": 1e-05
   }
 }

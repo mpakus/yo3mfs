@@ -186,9 +186,15 @@ impl Viewer {
             if let Some(scene) = &self.scene {
                 if scene.palette.is_empty() {
                     ui.label(
-                        RichText::new(language.text(Key::NoProjectColors))
-                            .small()
-                            .color(MUTED),
+                        RichText::new(language.text(
+                            if scene.meshes.iter().any(|m| !m.colors.is_empty()) {
+                                Key::EmbeddedColors
+                            } else {
+                                Key::NoProjectColors
+                            },
+                        ))
+                        .small()
+                        .color(MUTED),
                     );
                 } else {
                     ui.add_space(4.);

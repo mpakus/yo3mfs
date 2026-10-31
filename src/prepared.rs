@@ -119,7 +119,7 @@ pub fn prepare(
             }
             points.push(Vertex {
                 position: (*p - origin).as_vec3().to_array(),
-                color: 0,
+                color: mesh.colors.get(n).copied().unwrap_or(0),
             });
         }
         let painted_indices = if mesh.painting.is_empty() {

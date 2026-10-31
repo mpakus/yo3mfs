@@ -24,7 +24,8 @@ class PackagingTests(unittest.TestCase):
         for name in ['scripts/package.py', 'scripts/verify_package.py', 'docs/PACKAGE.md',
                      'assets/fonts/OFL.txt', 'assets/branding/yo3mfs.ico',
                      'assets/branding/icons/512.png',
-                     'assets/linux/com.yo3mfs.viewer.desktop']:
+                     'assets/linux/com.yo3mfs.viewer.desktop', 'THIRD-PARTY-NOTICES.txt'] + [
+                         str(p.relative_to(ROOT)) for p in (ROOT / 'assets/licenses').iterdir()]:
             destination = self.root / name
             destination.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(ROOT / name, destination)
@@ -51,7 +52,9 @@ class PackagingTests(unittest.TestCase):
         with zipfile.ZipFile(archive_path) as archive:
             self.assertEqual(set(archive.namelist()), {
                 'yo3mfs-1.2.3/yo3mfs.exe', 'yo3mfs-1.2.3/yo3mfs.ico',
-                'yo3mfs-1.2.3/README.md', 'yo3mfs-1.2.3/NotoSansSymbols2-OFL.txt'})
+                'yo3mfs-1.2.3/README.md', 'yo3mfs-1.2.3/NotoSansSymbols2-OFL.txt',
+                'yo3mfs-1.2.3/THIRD-PARTY-NOTICES.txt'} | {
+                    f'yo3mfs-1.2.3/licenses/{p.name}' for p in (ROOT / 'assets/licenses').iterdir()})
             self.assertEqual(archive.read('yo3mfs-1.2.3/README.md'), (ROOT / 'docs/PACKAGE.md').read_bytes())
         self.run_script('verify_package.py', self.out)
 
