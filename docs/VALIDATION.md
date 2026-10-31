@@ -324,7 +324,7 @@ Native window checks on the same Apple Silicon Mac used the optimized, ad-hoc-si
 - Embedded glTF and GLB each rendered both separated instances, showed eight triangles and 50.00 × 20.00 × 30.00 mm, and exposed the static-preview limitation note.
 - An incomplete PLY without faces, a glTF referring to an external buffer, and a truncated GLB each showed the appropriate localized error while retaining the previous visible geometry, filename, dimensions, and counts. The external-buffer error advised exporting a self-contained file.
 - Choosing another valid file through the error banner cleared the prior error and replaced the scene successfully.
-- Finder drag attempts through the automation tool did not deliver a drop to the viewer. This is not evidence of an application failure or a successful drag-and-drop test. Manual confirmation was requested; physical drop acceptance remains unverified until recorded separately.
+- Finder drag attempts through the automation tool did not deliver a drop to the viewer. This is not evidence of an application failure or a successful automated drag-and-drop test. The owner subsequently completed the physical checks and reported success; see the confirmation below.
 
 Release preparation: Cargo versions, README download targets, dependency notices, current format documentation, and release notes are synchronized to 1.5.0. The GitHub repository secret metadata was checked without retrieving values: **zero secrets are configured**. Tagged macOS signing and therefore public release publication will fail closed until the original Developer ID/notarization credentials are configured. No signing bypass or secret recovery was attempted.
 
@@ -343,3 +343,13 @@ The staged whitespace check reports trailing spaces in original OCCT-exported ST
 After the Wasmtime update and explicit cache disable: formatting and Clippy (`--locked --all-targets --all-features -- -D warnings`) passed; **87 desktop/integration tests** and **84 core-only tests** passed. The optimized binary/inspector build, all ten format fixture smoke checks, 23 Python packaging/signing/release tests, actionlint, tag/version consistency, local documentation links, source fixture hashes, and mesh-generator reproducibility passed. The binary reports `yo3mfs 1.5.0`. A hardened-runtime ad-hoc-signed inspector with the audited entitlement imported the STEP box in 3.39 seconds with 12 triangles and 10 × 20 × 30 mm dimensions.
 
 The final ad-hoc development package is `target/release-validation-1.5.0/macos/yo3mfs-1.5.0-arm64.dmg`, SHA-256 `4413124ba9f337b3bb1f5bf26329681a4ee8fd9f1ba2ee9d48f28b0e35250cd4`. Bundle version/icon/license checks, strict code-signature verification, SHA-256 manifest, and DMG integrity passed. Native launch of that exact bundle showed **Version 1.5.0** in About, then opened and rendered `sample.glb` through the picker with two instances, eight triangles, and 50 × 20 × 30 mm dimensions. This remains an ad-hoc local build, not notarization or other-platform acceptance.
+
+### Owner-confirmed Finder drag-and-drop
+
+On October 31, 2026, the owner manually dragged `sample-little.ply`, `sample.gltf`, and `sample.glb` from the prepared `target/native-formats` Finder window into YO3MFS, followed by `invalid.glb`. The owner reported: "All drops passed; invalid GLB retained the model." This closes the outstanding local macOS PLY/glTF/GLB physical-drop and dropped-file failure-recovery checks. It is owner-reported manual evidence, distinct from the automated picker checks above, and does not extend acceptance to other platforms or exporters.
+
+The implementation commit `7203c35c711c5d1356a3345c7e97efcff136a6b2` and annotated `v1.5.0` tag were pushed to GitHub. This documentation follow-up leaves that tag unchanged. Package publication remains subject to the four-target workflow and configured macOS signing credentials.
+
+### First GitHub 1.5.0 runs
+
+The [tag run](https://github.com/mpakus/yo3mfs/actions/runs/41240711117) completed with Linux passing and both macOS jobs reaching signing, then failing closed because all seven required signing secrets were absent. Windows failed the malformed-STEP integration test. The [branch run](https://github.com/mpakus/yo3mfs/actions/runs/41240711076) passed both macOS jobs and Linux; Windows had the same test failure. No release was published.

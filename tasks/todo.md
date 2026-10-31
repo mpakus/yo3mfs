@@ -71,7 +71,8 @@ Remaining limits: coincident surfaces in intersecting parts may flicker; slicer 
 
 - [x] Native macOS picker/rendering for all three PLY encodings, embedded glTF, and GLB; expected counts/dimensions and persistent notes.
 - [x] Native failed-load scene retention for malformed PLY, external-buffer glTF, and truncated GLB; successful recovery through Choose another file.
-- [ ] Physical Finder drag-and-drop confirmation (automation did not deliver cross-window drops).
+- [x] Owner-confirmed physical Finder drops of PLY, glTF, and GLB, including retention of the last good model after dropping invalid GLB; see the validation report.
 - [x] Synchronize version 1.5.0, download targets, notices, format documentation, and release notes.
 - [x] Prepare the reviewed 1.5.0 source, final local tests/build, and verified macOS development DMG for the requested commit/tag push.
+- [x] Push implementation commit `7203c35` and annotated `v1.5.0` tag to GitHub.
 - [ ] Configure the missing macOS signing secrets, complete the four-target workflow, and verify release downloads.
