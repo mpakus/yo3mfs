@@ -353,3 +353,11 @@ The implementation commit `7203c35c711c5d1356a3345c7e97efcff136a6b2` and annotat
 ### First GitHub 1.5.0 runs
 
 The [tag run](https://github.com/mpakus/yo3mfs/actions/runs/41240711117) completed with Linux passing and both macOS jobs reaching signing, then failing closed because all seven required signing secrets were absent. Windows failed the malformed-STEP integration test. The [branch run](https://github.com/mpakus/yo3mfs/actions/runs/41240711076) passed both macOS jobs and Linux; Windows had the same test failure. No release was published.
+
+### Windows fixture-test correction
+
+The Windows failure was reproduced locally with CRLF input: the test's `ENDSEC;\nEND-ISO` replacement did not match, leaving a valid STEP file unchanged. A regression assertion failed on that no-op before the fix. The malformed record is now inserted after the `DATA;` token, independently of line endings. All malformed variants are exercised with LF and CRLF, and each must differ from the valid input before rejection is checked. No importer behavior or acceptance limit was weakened.
+
+`.gitattributes` disables text conversion only for `tests/fixtures/**`, preserving the authored/exported bytes and provenance hashes. All 13 manifest fixture hashes were checked through Git's checkout filter with `core.autocrlf=true` and remained identical. The correction is a follow-up on `main`; the existing `v1.5.0` tag remains at its original commit and retains its original failed Windows run. A future release containing this correction needs a new version tag.
+
+Local verification of the test correction: all six STEP integration tests passed with `cargo test --locked --no-default-features --test import_step`; formatting, all-target/all-feature Clippy with warnings denied, and diff checks passed. The new Windows hosted run is separate validation and is not claimed by these local results.

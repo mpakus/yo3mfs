@@ -1,0 +1,2 @@
+# Preserve fixture bytes and provenance hashes on every checkout, including Windows.
+tests/fixtures/** -text

@@ -153,22 +153,23 @@ fn step_errors_limits_and_cancellation_do_not_publish_partial_geometry() {
             Err(ImportError::Limit(_))
         ));
     }
-    let text = String::from_utf8(bytes).unwrap();
-    for invalid in [
-        text[..text.len() / 2].to_owned(),
-        text.replace("END-ISO-10303-21;", ""),
-        text.replace("#1 = ", "#bad = "),
-        text.replace(
-            "ENDSEC;\nEND-ISO",
-            "#999=THIS_IS_NOT_A_RECORD;\nENDSEC;\nEND-ISO",
-        ),
-        text.replace("DATA;", "DATA;\n#999=UNKNOWN_ENTITY('unterminated);"),
-        format!("{text}garbage"),
-    ] {
-        assert!(
-            load_bytes(invalid.as_bytes(), &Limits::default()).is_err(),
-            "accepted malformed STEP"
-        );
+    let text = String::from_utf8(bytes).unwrap().replace("\r\n", "\n");
+    let crlf = text.replace('\n', "\r\n");
+    for text in [&text, &crlf] {
+        for invalid in [
+            text[..text.len() / 2].to_owned(),
+            text.replace("END-ISO-10303-21;", ""),
+            text.replace("#1 = ", "#bad = "),
+            text.replace("DATA;", "DATA;\n#999=THIS_IS_NOT_A_RECORD;"),
+            text.replace("DATA;", "DATA;\n#999=UNKNOWN_ENTITY('unterminated);"),
+            format!("{text}garbage"),
+        ] {
+            assert!(&invalid != text, "malformed fixture mutation was a no-op");
+            assert!(
+                load_bytes(invalid.as_bytes(), &Limits::default()).is_err(),
+                "accepted malformed STEP"
+            );
+        }
     }
     assert!(
         load_bytes(
